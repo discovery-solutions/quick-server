@@ -1,0 +1,56 @@
+{
+  "name": "@discovery-solutions/quick-server",
+  "version": "1.0.4",
+  "description": "",
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "release": "standard-version && git push --follow-tags origin main",
+    "build": "rimraf dist && tsc",
+    "dev": "nodemon",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/discovery-solutions-app/quick-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/discovery-solutions-app/quick-server/issues"
+  },
+  "homepage": "https://github.com/discovery-solutions-app/quick-server#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "mongodb": "^6.10.0",
+    "mysql2": "^3.11.4",
+    "pg": "^8.13.1",
+    "rimraf": "6.0.1",
+    "sqlite3": "^5.1.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "standard-version": "9.5.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.6.3"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ],
+    "exec": "clear && node -r tsconfig-paths/register -r ts-node/register ./src/dev.ts",
+    "ext": "ts, js"
+  }
+}

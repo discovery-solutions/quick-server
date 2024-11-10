@@ -1,10 +1,12 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { Database, DatabaseInterface } from '../../features/databases';
 import { CRUDMiddleware } from '../../features/crud/http';
 import { ServerConfig } from '../../types';
+import { Logger } from '../../utils/logger';
 import * as Utils from './utils';
 import * as http from 'http';
 import { parse } from 'url';
+
+const logger = new Logger('http-server');
 
 export interface Context {
   request: IncomingMessage & {
@@ -23,11 +25,9 @@ export class HTTPServer {
   private middlewares: ((ctx: Context, next: () => Promise<any>) => Promise<any>)[] = [];
   private config: ServerConfig;
   private basePath: string;
-  private database: DatabaseInterface;
 
   constructor(config: ServerConfig) {
     this.config = config;
-    this.database = Database.get(config.database);
   }
 
   apply(callback: (instance: HTTPServer) => any) {
@@ -142,7 +142,8 @@ export class HTTPServer {
     const server = http.createServer((req, res) => this.handleRequest(req as any, res));
 
     server.listen(this.config.port, () => {
-      console.log(`[${this.config.name}]: Rest server running on port ${this.config.port}`);
+      logger.setOrigin(this.config.name);
+      logger.log(`Rest server running on port ${this.config.port}`);
     });
   }
 }

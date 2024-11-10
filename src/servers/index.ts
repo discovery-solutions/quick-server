@@ -1,6 +1,9 @@
 import { SocketServer } from './socket';
 import { HTTPServer } from './http';
 import { Config } from '../types';
+import { Logger } from '../utils/logger';
+
+const logger = new Logger();
 
 export class Server {
   private static instance: Server | null = null;
@@ -38,7 +41,7 @@ export class Server {
     if (!Server.instance)
       throw new Error('Server not initialized. Call Server.initialize(servers) first.');
 
-    console.log('[Quick-Server] Starting servers...');
+    logger.log('Starting servers...');
     Server.instance.servers.forEach((server, key) => {
       if (server) server.start();
     });

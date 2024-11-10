@@ -4,6 +4,9 @@ import { Server } from "./servers";
 import { Config } from "./types";
 import { extract } from "./utils/config";
 import { loadYaml } from "./utils/file";
+import { Logger } from "./utils/logger";
+
+const logger = new Logger();
 
 export class QuickServer {
   private config: Config;
@@ -11,15 +14,17 @@ export class QuickServer {
   constructor(filePath = 'SERVER.yaml') {
     this.config = extract(loadYaml(filePath));
 
-    console.log('[Quick-Server] Initializing DBs');
+    Logger.setConfig(this.config.developer.logger);
+    
+    logger.log('Initializing DBs');
     Database.initialize(this.config.databases);
 
-    console.log('[Quick-Server] Initializing Servers');
+    logger.log('Initializing Servers');
     Server.initialize(this.config.servers);
   }
 
   async start() {
-    console.log('[Quick-Server] Initializing Entities...');
+    logger.log('Initializing Entities...');
     Entity.initialize(this.config.entities);
     
     Server.start();

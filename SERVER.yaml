@@ -1,3 +1,8 @@
+developer:
+  logger:
+    formatted: true
+    verbose: false
+
 servers:
   - name: "Rest-Server"
     port: 3501
@@ -60,12 +65,14 @@ entities:
           list: true
           get: true
 
-  - name: "post"
-    alias: "Post"
+  - name: "company"
+    alias: "Company"
     fields:
-      title:
+      name:
         type: "string"
         required: true
-      subtitle: "string"
-      content: "string"
-      tags: "string"
+      document:
+        type: "string"
+        required: true
+      phone: "string"
+      address: "string"

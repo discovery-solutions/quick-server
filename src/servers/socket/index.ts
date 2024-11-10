@@ -1,5 +1,6 @@
 import * as WebSocket from 'ws';
 import { ServerConfig } from '../../types';
+import { Logger } from '../../utils/logger';
 
 export interface WebSocketContext {
   socket: WebSocket;
@@ -14,9 +15,11 @@ export class SocketServer {
   private routes: { [path: string]: WebSocketHandler } = {};
   private middlewares: ((ctx: WebSocketContext, next: () => Promise<void>) => Promise<void>)[] = [];
   private config: ServerConfig;
+  private logger: Logger;
 
   constructor(config: ServerConfig) {
     this.config = config;
+    this.logger = new Logger(this.config.name);
   }
 
   use(middleware: (ctx: WebSocketContext, next: () => Promise<void>) => Promise<void>) {
@@ -53,7 +56,7 @@ export class SocketServer {
 
     wss.on('connection', (socket) => this.handleConnection(socket));
 
-    console.log(`[${this.config.name}]: WebSocket server running on port ${this.config.port}`);
+    this.logger.log(`WebSocket server running on port ${this.config.port}`);
   }
 }
 

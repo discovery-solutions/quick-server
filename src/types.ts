@@ -49,8 +49,16 @@ export interface EntityConfig {
   };
 }
 
+export interface DeveloperConfig {
+  logger?: {
+    formatted?: boolean;
+    verbose?: boolean;
+  }
+}
+
 export interface Config {
   servers: ServerConfig[];
   databases: DatabaseConfig[];
   entities: EntityConfig[];
+  developer: DeveloperConfig;
 }

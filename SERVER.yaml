@@ -1,30 +1,32 @@
 servers:
-  - name: "json_server"
+  - name: "Rest-Server"
     port: 3501
     type: "rest"
     format: "json"
     database: "main"
     request:
       limit: 10
-  - name: "socket_server"
+  - name: "Socket-Server"
     port: 3500
     type: "socket"
     format: "csv"
-    database: "mongo"
+    database: "mongodb"
     request:
       limit: 1000
 
 databases:
-  - type: mysql
+  - type: in-memory
     key: "main"
-    host: localhost
-    user: root
-    password: password
-    database: my_database
-  - type: "mongo"
-    key: "mongo"
-    name: "my-mongo-db"
-    uri: "mongodb+srv://..."
+  # - type: mysql
+  #   key: "main"
+  #   host: localhost
+  #   user: root
+  #   password: password
+  #   database: my_database
+  # - type: "mongodb"
+  #   key: "mongodb"
+  #   name: "my-mongo-db"
+  #   uri: "mongodb+srv://..."
 
 entities:
   - name: "user"

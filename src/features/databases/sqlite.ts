@@ -1,9 +1,7 @@
-// src/databases/sqliteDb.ts
-
-import { Database } from './index';
+import { DatabaseInterface } from './types';
 import sqlite3 from 'sqlite3';
 
-export class SqliteDB implements Database {
+export class SqliteDB implements DatabaseInterface {
   private db: sqlite3.Database;
 
   constructor(dbFile: string) {
@@ -75,6 +73,41 @@ export class SqliteDB implements Database {
       const query = `INSERT INTO ${table} (${Object.keys(data[0]).join(',')}) VALUES ${placeholders}`;
 
       const values = data.flatMap((item) => Object.values(item));
+
+      this.db.run(query, values, function (err) {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  async bulkUpdate<T>(table: string, data: T[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const setClause = Object.keys(data[0])
+        .map((key) => `${key} = ?`)
+        .join(',');
+      const placeholders = data
+        .map((_) => `(${Object.keys(data[0]).map(() => '?').join(',')})`)
+        .join(',');
+      const query = `UPDATE ${table} SET ${setClause} WHERE ${placeholders}`;
+
+      const values = data.flatMap((item) => Object.values(item));
+
+      this.db.run(query, values, function (err) {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  async bulkDelete<T>(table: string, data: T[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const conditions = data
+        .map((item) => `id = ?`)
+        .join(' OR ');
+      const query = `DELETE FROM ${table} WHERE ${conditions}`;
+
+      const values = data.map((item) => item['id']);
 
       this.db.run(query, values, function (err) {
         if (err) reject(err);

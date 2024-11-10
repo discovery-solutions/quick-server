@@ -1,10 +1,15 @@
 import { IncomingMessage, ServerResponse } from 'http';
+import { Database, DatabaseInterface } from '../../features/databases';
+import { CRUDMiddleware } from '../../features/crud/http';
 import { ServerConfig } from '../../types';
+import * as Utils from './utils';
 import * as http from 'http';
 import { parse } from 'url';
 
 export interface Context {
-  request: IncomingMessage;
+  request: IncomingMessage & {
+    body: any;
+  };
   response: ServerResponse;
   json: (data: any) => any;
   error: (err: Error) => any;
@@ -17,9 +22,16 @@ export class HTTPServer {
   private routes: { [key: string]: { [method: string]: RouteHandler } } = {};
   private middlewares: ((ctx: Context, next: () => Promise<any>) => Promise<any>)[] = [];
   private config: ServerConfig;
+  private basePath: string;
+  private database: DatabaseInterface;
 
   constructor(config: ServerConfig) {
     this.config = config;
+    this.database = Database.get(config.database);
+  }
+
+  apply(callback: (instance: HTTPServer) => any) {
+    return callback(this);
   }
 
   use(middleware: (ctx: Context, next: () => Promise<any>) => Promise<any>) {
@@ -46,14 +58,24 @@ export class HTTPServer {
     this._register('delete', path, handler);
   }
 
-  private _register(method: string, path: string, handler: RouteHandler) {
-    if (!this.routes[path]) {
+  group(prefix: string, callback: () => void) {
+    this.basePath = prefix;
+
+    callback();
+
+    this.basePath = undefined;
+  }
+
+  private _register(method: string, suffix: string, handler: RouteHandler) {
+    const path = (this.basePath ? `${this.basePath}${suffix}` : suffix).replace(/\/$/, '');
+    
+    if (!this.routes[path])
       this.routes[path] = {};
-    }
+
     this.routes[path][method] = handler;
   }
 
-  handleRequest(req: IncomingMessage, res: ServerResponse) {
+  handleRequest = async (req: Context['request'], res: Context['response']) => {
     const parsedUrl = parse(req.url || '', true);
     const { pathname, query } = parsedUrl;
     const method = req.method?.toLowerCase() || '';
@@ -63,6 +85,7 @@ export class HTTPServer {
     const ctx: Context = {
       request: req,
       response: res,
+      params: { ...params, ...query },
       json: (data) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
@@ -71,21 +94,17 @@ export class HTTPServer {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message || 'Internal Server Error' }));
       },
-      params: { ...params, ...query },
     };
-
-    const runMiddlewares = async () => {
-      for (const mw of this.middlewares) {
-        await mw(ctx, () => Promise.resolve());
-      }
-    };
-
+    
     const route = this.routes[pathname || ''] && this.routes[pathname || ''][method];
-    if (route) {
-      runMiddlewares().then(() => route(ctx));
-    } else {
-      ctx.error(new Error('Not Found'));
-    }
+    
+    for (const mw of this.middlewares)
+      await mw(ctx, () => Promise.resolve());
+
+    if (!route)
+      return ctx.error(new Error('Not Found'));
+
+    return await Promise.resolve(route(ctx));
   }
 
   extractParams(pathname: string): { [key: string]: string } {
@@ -115,7 +134,13 @@ export class HTTPServer {
   }
 
   start() {
-    const server = http.createServer((req, res) => this.handleRequest(req, res));
+    this.use(Utils.jsonParser);
+    this.use(Utils.formParser);
+    this.use(Utils.corsMiddleware);
+    this.apply(CRUDMiddleware);
+
+    const server = http.createServer((req, res) => this.handleRequest(req as any, res));
+
     server.listen(this.config.port, () => {
       console.log(`[${this.config.name}]: Rest server running on port ${this.config.port}`);
     });
@@ -140,15 +165,16 @@ server.use(async (ctx, next) => {
   await next();
 });
 
-// Registrando rotas
-server.get('/user/:id', (ctx) => {
-  const { id } = ctx.params;
-  const { name } = ctx.params;
-  ctx.json({ message: `User ID: ${id}, Name: ${name}` });
-});
+// Agrupando rotas
+server.group('/users', () => {
+  server.get('/:id', (ctx) => {
+    const { id } = ctx.params;
+    ctx.json({ message: `User ID: ${id}` });
+  });
 
-server.post('/user', (ctx) => {
-  ctx.json({ message: 'User created' });
+  server.post('/', (ctx) => {
+    ctx.json({ message: 'User created' });
+  });
 });
 
 server.start();

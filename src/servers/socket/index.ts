@@ -28,7 +28,7 @@ export class SocketServer {
   }
 
   handleConnection(socket: WebSocket) {
-    socket.on('message', (message) => {
+    socket.on('message', async (message) => {
       const ctx: WebSocketContext = {
         socket,
         message,
@@ -36,18 +36,15 @@ export class SocketServer {
         error: (err) => socket.send(JSON.stringify({ error: err.message || 'Error' })),
       };
 
-      const runMiddlewares = async () => {
-        for (const mw of this.middlewares) {
-          await mw(ctx, () => Promise.resolve());
-        }
-      };
-
       const route = this.routes['/ws'];
-      if (route) {
-        runMiddlewares().then(() => route(ctx));
-      } else {
-        ctx.error(new Error('Route not found'));
-      }
+
+      if (!route)
+        return ctx.error(new Error('Route not found'));
+
+      for (const mw of this.middlewares)
+        await mw(ctx, () => Promise.resolve());
+
+      return route(ctx);
     });
   }
 

@@ -1,7 +1,7 @@
 {
   "name": "@discovery-solutions/quick-server",
-  "version": "1.0.4",
-  "description": "",
+  "version": "1.0.0",
+  "description": "A fast, easy-to-use WebSocket server framework for building real-time applications with JSON/YAML configuration and minimal setup.",
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -48,7 +48,8 @@
       "node_modules"
     ],
     "watch": [
-      "src"
+      "src",
+      "SERVER.yaml"
     ],
     "exec": "clear && node -r tsconfig-paths/register -r ts-node/register ./src/dev.ts",
     "ext": "ts, js"

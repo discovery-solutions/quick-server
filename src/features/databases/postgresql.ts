@@ -1,9 +1,7 @@
-// src/databases/postgresDb.ts
-
-import { Database } from './index';
+import { DatabaseInterface } from './types';
 import { Pool } from 'pg';
 
-export class PostgresDb implements Database {
+export class PostgresDb implements DatabaseInterface {
   private pool: Pool;
 
   constructor(connectionString: string) {
@@ -57,5 +55,23 @@ export class PostgresDb implements Database {
     const queryText = `INSERT INTO ${table} (${keys.join(',')}) VALUES ${valuePlaceholders}`;
     const flatValues = values.flat();
     await this.pool.query(queryText, flatValues);
+  }
+
+  async bulkUpdate<T>(table: string, data: T[]): Promise<void> {
+    const keys = Object.keys(data[0]);
+    const values = data.map(item => Object.values(item));
+    const valuePlaceholders = values.map((_, i) => `(${keys.map((_, j) => `$${i * keys.length + j + 1}`).join(',')})`).join(',');
+
+    const queryText = `UPDATE ${table} SET ${keys.map(key => `${key} = ?`).join(', ')} WHERE id = ?`;
+    const flatValues = values.flat();
+    await this.pool.query(queryText, flatValues);
+  }
+
+  async bulkDelete<T>(table: string, data: T[]): Promise<void> {
+    const ids = data.map(item => item['id']);
+    await this.pool.query(
+      `DELETE FROM ${table} WHERE id = ANY($1)`,
+      [ids]
+    );
   }
 }

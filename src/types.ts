@@ -10,7 +10,7 @@ export interface ServerConfig {
 }
 
 export interface DatabaseConfig {
-  type: 'mysql' | 'mongo' | 'custom';
+  type: 'in-memory' | 'mongodb' | 'mysql' | 'postgresql' | 'sqlite' | 'custom';
   key: string;
   host?: string;
   user?: string;

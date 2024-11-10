@@ -112,7 +112,7 @@ entities:
 To use Quick Server, simply install it via npm:
 
 ```bash
-npm install @discovery-solutions/quick-server
+npm install github:discovery-solutions/quick-server
 ```
 
 ## Usage

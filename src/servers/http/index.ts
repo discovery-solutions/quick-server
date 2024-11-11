@@ -13,6 +13,13 @@ export interface Context {
     body: any;
   };
   response: ServerResponse;
+  getInfo: () => {
+    method?: string;
+    url: string;
+    headers: http.IncomingHttpHeaders;
+    params: Record<string, any>;
+    timestamp: string;
+  };
   json: (data: any) => any;
   error: (err: Error) => any;
   params: { [key: string]: string | string[] | undefined };
@@ -86,6 +93,13 @@ export class HTTPServer {
       request: req,
       response: res,
       params: { ...params, ...query },
+      getInfo: () => ({
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        params: ctx.params,
+        timestamp: new Date().toISOString(),
+      }),
       json: (data) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));

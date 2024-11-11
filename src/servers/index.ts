@@ -43,6 +43,7 @@ export class Server {
 
     logger.log('Starting servers...');
     Server.instance.servers.forEach((server, key) => {
+      server.use(Logger.middleware);
       if (server) server.start();
     });
   }

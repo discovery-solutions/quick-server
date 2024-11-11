@@ -1,10 +1,18 @@
 import * as WebSocket from 'ws';
 import { ServerConfig } from '../../types';
 import { Logger } from '../../utils/logger';
+import * as http from 'http';
 
 export interface WebSocketContext {
   socket: WebSocket;
   message: any;
+  getInfo: () => {
+    method?: string;
+    url: string;
+    headers: http.IncomingHttpHeaders;
+    params?: Record<string, any>;
+    timestamp: string;
+  };
   send: (data: any) => void;
   error: (err: Error) => void;
 }
@@ -37,6 +45,12 @@ export class SocketServer {
         message,
         send: (data) => socket.send(JSON.stringify(data)),
         error: (err) => socket.send(JSON.stringify({ error: err.message || 'Error' })),
+        getInfo: () => ({
+          url: socket.url,
+          message: message,
+          headers: socket.headers,
+          timestamp: new Date().toISOString(),
+        }),
       };
 
       const route = this.routes['/ws'];

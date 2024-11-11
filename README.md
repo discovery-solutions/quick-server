@@ -44,6 +44,11 @@ With built-in CRUD routes, authentication, file upload support, and database int
 Quick Server allows configuration through a simple YAML file. Below is an example setup:
 
 ```yaml
+developer:
+  logger:
+    formatted: true
+    verbose: false
+
 servers:
   - name: "Rest-Server"
     port: 3501
@@ -119,8 +124,12 @@ npm install github:discovery-solutions/quick-server
 
 Once installed, configure your server using a YAML file (as shown above). Run the server by executing:
 
-```bash
-node server.js
+```ts
+// server.js
+import { QuickServer } from "@discovery-solutions/quick-server";
+
+const server = new QuickServer();
+server.start();
 ```
 
 This will start both the WebSocket and REST servers based on the configuration.
@@ -154,8 +163,9 @@ This will start both the WebSocket and REST servers based on the configuration.
   - [ ] Create Tests for Features
 - [ ] **Interceptors**  
   - [ ] Add Custom Request Handlers
-- [ ] **Logger**  
-  - [ ] Add Request and API Transaction Logger
+- [x] **Logger**  
+  - [x] Add Custom Logger with Metadata
+  - [x] Add Request and API Transaction Logger
 - [ ] **Full Search**  
   - [ ] Search for All Entities
 - [ ] **Documentation**  

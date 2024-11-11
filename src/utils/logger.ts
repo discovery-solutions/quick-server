@@ -69,6 +69,12 @@ export class Logger {
     this.write('debug', message, meta);
   }
 
+  static middleware(req, next) {
+    const logger = new Logger();
+    logger.log('Incoming Request', req.getInfo());
+    return next();
+  }
+
   static setConfig({ formatted, verbose }: LoggerConfig) {
     config.formatted = formatted;
     config.verbose = verbose;

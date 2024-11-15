@@ -2,6 +2,8 @@ developer:
   logger:
     formatted: true
     verbose: false
+  # mock: true                # Para testes locais
+  # bypassAuthForLocal: true  # Desativa auth em ambiente local para testes
 
 servers:
   - name: "Rest-Server"
@@ -9,33 +11,79 @@ servers:
     type: "rest"
     format: "json"
     database: "main"
-    request:
-      limit: 10
+    # request:
+    #   limit: 10
+    #   timeout: 1000         # mil segundos
   - name: "Socket-Server"
     port: 3500
     type: "socket"
-    format: "csv"
+    # format: "csv"
     database: "mongodb"
-    request:
-      limit: 1000
+    # request:
+    #   limit: 1000
+    #   timeout: 60           # sessenta segundos
+
+auth:
+  strategies:
+    jwt:
+      secret: "super_secret_key"
+      expiresIn: "1h"
+    oauth:
+      google:
+        clientId: "google_oauth_client_id"
+        clientSecret: "google_oauth_client_secret"
+        authUrl: "https://accounts.google.com/o/oauth2/auth"
+        tokenUrl: "https://oauth2.googleapis.com/token"
+      github:
+        clientId: "github_oauth_client_id"
+        clientSecret: "github_oauth_client_secret"
+        authUrl: "https://github.com/login/oauth/authorize"
+        tokenUrl: "https://github.com/login/oauth/access_token"
+    refreshToken:
+      enabled: true
+      expiration: "7d"
+
+  permissions:
+    default: 
+      "*": 
+        get: false
+        list: false
+        insert: false
+        update: false
+        delete: false
+    entities:
+      user:
+        "*": 
+          get: true
+          list: true
+        post: 
+          insert: true
+          update: true
+          delete: true
+      company:
+        "*": 
+          get: true
+          list: true
+          insert: false
+          update: false
+          delete: false
 
 databases:
   - type: in-memory
+    # logs: true
     key: "main"
-  # - type: mysql
-  #   key: "main"
-  #   host: localhost
-  #   user: root
-  #   password: password
-  #   database: my_database
-  # - type: "mongodb"
+  # - type: mongodb
   #   key: "mongodb"
-  #   name: "my-mongo-db"
   #   uri: "mongodb+srv://..."
+  #   name: "my-mongo-db"
 
 entities:
   - name: "user"
     alias: "User"
+    auth:
+      type: "jwt"
+      jwt:
+        fields: ["email", "password"]
     fields:
       name:
         type: "string"
@@ -43,27 +91,12 @@ entities:
       email:
         type: "string"
         required: true
-      avatar: "file"
+      avatar: 
+        type: "file"
       password:
         type: "string"
         required: true
         secure: true
-    auth:
-      type: "jwt"
-      fields: ["login", "password"]
-      permissions:
-        "*":
-          insert: false
-          update: false
-          delete: false
-          list: true
-          get: true
-        "post":
-          insert: true
-          update: true
-          delete: true
-          list: true
-          get: true
 
   - name: "company"
     alias: "Company"
@@ -74,5 +107,11 @@ entities:
       document:
         type: "string"
         required: true
-      phone: "string"
-      address: "string"
+      phone: 
+        type: "string"
+      address: 
+        type: "string"
+    auth:
+      type: "oauth"
+      oauth:
+        strategy: "google"

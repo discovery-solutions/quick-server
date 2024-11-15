@@ -1,65 +1,99 @@
-import type { Context } from '.';
+import { IncomingMessage, ServerResponse } from 'http';
+import { RouteHandler } from './types';
 
-export async function jsonParser(ctx: Context, next: () => Promise<any>) {
-  if (ctx.request.headers['content-type']?.includes('application/json')) {
-    let rawBody = '';
-    ctx.request.on('data', (chunk) => {
-      rawBody += chunk;
-    });
-    ctx.request.on('end', () => {
-      try {
-        ctx.request.body = JSON.parse(rawBody);
-      } catch (err) {
-        return ctx.error(new Error('Invalid JSON format'));
-      }
-      next();
-    });
-  } else {
-    await next();
-  }
-}
-
-export async function formParser(ctx: Context, next: () => Promise<any>) {
-  if (ctx.request.headers['content-type']?.includes('multipart/form-data')) {
-    const boundary = ctx.request.headers['content-type']?.split('boundary=')[1];
-    if (!boundary) return ctx.error(new Error('No boundary in form data'));
-
-    let rawBody = '';
-    ctx.request.on('data', (chunk) => {
-      rawBody += chunk;
-    });
-
-    ctx.request.on('end', () => {
-      const parts = rawBody.split(`--${boundary}`).filter(Boolean);
-      const parsedFields: any = {};
-      parts.forEach((part: string) => {
-        const [headers, body] = part.split('\r\n\r\n');
-        const fieldName = headers.match(/Content-Disposition: form-data; name="([^"]+)"/)?.[1];
-        if (fieldName) {
-          parsedFields[fieldName] = body.trim();
+export function jsonParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
+  return new Promise(resolve => {
+    if (request.headers['content-type']?.includes('application/json')) {
+      let rawBody = '';
+      request.on('data', (chunk) => {
+        rawBody += chunk;
+      });
+      request.on('end', () => {
+        try {
+          (request as any).body = JSON.parse(rawBody);
+        } catch (err) {
+          return new Error('Invalid JSON format');
+        } finally {
+          resolve(request);
         }
       });
-      ctx.request.body = parsedFields;
-      next();
-    });
-  } else {
-    await next();
-  }
+    } else {
+      return resolve(false);
+    }
+  });
 }
 
-export const corsMiddleware = (ctx: Context, next: () => Promise<any>) => {
+export function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
+  return new Promise(resolve => {
+    if (request.headers['content-type']?.includes('multipart/form-data')) {
+      const boundary = request.headers['content-type']?.split('boundary=')[1];
+      if (!boundary) return new Error('No boundary in form data');
+
+      let rawBody = '';
+      request.on('data', (chunk) => {
+        rawBody += chunk;
+      });
+
+      request.on('end', () => {
+        const parts = rawBody.split(`--${boundary}`).filter(Boolean);
+        const parsedFields: any = {};
+        parts.forEach((part: string) => {
+          const [headers, body] = part.split('\r\n\r\n');
+          const fieldName = headers.match(/Content-Disposition: form-data; name="([^"]+)"/)?.[1];
+          if (fieldName) {
+            parsedFields[fieldName] = body.trim();
+          }
+        });
+        (request as any).body = parsedFields;
+        resolve(request);
+      });
+    } else {
+      resolve(false);
+    }
+  });
+}
+
+export async function corsMiddleware(request: IncomingMessage, response: ServerResponse, next: () => Promise<any>) {
   const allowedOrigins = ['*'];
-  const origin = ctx.request.headers.origin;
+  const origin = request.headers.origin;
 
   if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-    ctx.response.setHeader('Access-Control-Allow-Origin', origin || '*');
-    ctx.response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    ctx.response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.setHeader('Access-Control-Allow-Origin', origin || '*');
+    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
-  if (ctx.request.method !== 'OPTIONS')
+  if (request.method !== 'OPTIONS')
     return next();
     
-  ctx.response.statusCode = 204;
-  ctx.response.end();
+  response.statusCode = 204;
+  response.end();
+}
+
+export function findRoute(pathname: string, method: string, routes: any): RouteHandler | undefined {
+  for (const route of Object.keys(routes)) {
+    const routeParts = route.split('/');
+    const pathParts = pathname.split('/');
+
+    if (routeParts.length !== pathParts.length) continue;
+
+    let isMatch = true;
+    const params: { [key: string]: string } = {};
+
+    for (let i = 0; i < routeParts.length; i++) {
+      if (routeParts[i].startsWith(':')) {
+        params[routeParts[i].slice(1)] = pathParts[i];
+      } else if (routeParts[i] !== pathParts[i]) {
+        isMatch = false;
+        break;
+      }
+    }
+
+    if (isMatch) {
+      routes[route][method].params = params;
+      return routes[route][method];
+    }
+  }
+
+  return undefined;
 }

@@ -1,3 +1,5 @@
+import { uuid } from ".";
+
 interface LoggerConfig {
   formatted?: boolean;
   verbose?: boolean;
@@ -10,9 +12,11 @@ export const config: LoggerConfig = {
 
 export class Logger {
   private origin: string;
+  private active: boolean;
 
-  constructor(origin?: string) {
+  constructor(origin?: string, active: boolean = true) {
     this.origin = origin || 'QuickServer';
+    this.active = active;
   }
 
   public setOrigin(origin: string) {
@@ -24,6 +28,8 @@ export class Logger {
   }
 
   private write(level: string, message: any, meta: Record<string, any>) {
+    if (!this.active) return null;
+    
     const id = uuid();
     const prefix = `[${this.origin}] #${id}`;
     const data = (() => {
@@ -79,10 +85,4 @@ export class Logger {
     config.formatted = formatted;
     config.verbose = verbose;
   }
-}
-
-const uuid = () => {
-  const timestamp = Date.now().toString().slice(-4);
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return timestamp + random;
 }

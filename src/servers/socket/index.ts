@@ -1,31 +1,20 @@
+import type { Message, WebSocketContext, WebSocketHandler } from './types';
+import { Database, DatabaseInterface } from '../../features/databases';
+import { CRUDMiddlewareSocket } from '../../features/crud';
+import type { ServerConfig } from '../../types';
+import { parseResponse } from '../utils';
 import * as WebSocket from 'ws';
-import { ServerConfig } from '../../types';
 import { Logger } from '../../utils/logger';
-import * as http from 'http';
-
-export interface WebSocketContext {
-  socket: WebSocket;
-  message: any;
-  getInfo: () => {
-    method?: string;
-    url: string;
-    headers: http.IncomingHttpHeaders;
-    params?: Record<string, any>;
-    timestamp: string;
-  };
-  send: (data: any) => void;
-  error: (err: Error) => void;
-}
-
-export type WebSocketHandler = (ctx: WebSocketContext) => void;
 
 export class SocketServer {
   private routes: { [path: string]: WebSocketHandler } = {};
   private middlewares: ((ctx: WebSocketContext, next: () => Promise<void>) => Promise<void>)[] = [];
   private config: ServerConfig;
   private logger: Logger;
+  public database: DatabaseInterface;
 
   constructor(config: ServerConfig) {
+    this.database = Database.get(config.database);
     this.config = config;
     this.logger = new Logger(this.config.name);
   }
@@ -34,17 +23,24 @@ export class SocketServer {
     this.middlewares.push(middleware);
   }
 
+  apply(callback: (instance: SocketServer) => any) {
+    return callback(this);
+  }
+
   on(path: string, handler: WebSocketHandler) {
     this.routes[path] = handler;
   }
 
   handleConnection(socket: WebSocket) {
-    socket.on('message', async (message) => {
+    socket.on('message', async (raw: string) => {
+      const message: Message = JSON.parse(raw);
       const ctx: WebSocketContext = {
         socket,
         message,
-        send: (data) => socket.send(JSON.stringify(data)),
-        error: (err) => socket.send(JSON.stringify({ error: err.message || 'Error' })),
+        getParams: () => message.params,
+        getBody: () => message.body,
+        error: (err) => socket.send({ error: err.message || 'Error' }),
+        send: (data) => socket.send(parseResponse(this.config.format, data)),
         getInfo: () => ({
           url: socket.url,
           message: message,
@@ -53,19 +49,25 @@ export class SocketServer {
         }),
       };
 
-      const route = this.routes['/ws'];
+      try {
+        const route = this.routes[message.action];
 
-      if (!route)
-        return ctx.error(new Error('Route not found'));
+        if (!route)
+          return ctx.error(new Error('Route not found'));
 
-      for (const mw of this.middlewares)
-        await mw(ctx, () => Promise.resolve());
+        for (const mw of this.middlewares)
+          await mw(ctx, () => Promise.resolve());
 
-      return route(ctx);
+        return route(ctx);
+      } catch (error) {
+        return ctx.error(error);
+      }
     });
   }
 
   start() {
+    this.apply(CRUDMiddlewareSocket);
+
     const wss = new WebSocket.Server({ port: this.config.port });
 
     wss.on('connection', (socket) => this.handleConnection(socket));

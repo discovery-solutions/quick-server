@@ -1,47 +1,39 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { CRUDMiddleware } from '../../features/crud/http';
+import { HTTPContext, RequestParams, RouteHandler } from './types';
+import { Database, DatabaseInterface } from '../../features/databases';
+import { CRUDMiddlewareHTTP } from '../../features/crud';
+import { parseResponse } from '../utils';
 import { ServerConfig } from '../../types';
+import { createServer } from 'http';
 import { Logger } from '../../utils/logger';
 import * as Utils from './utils';
-import * as http from 'http';
 import { parse } from 'url';
 
 const logger = new Logger('http-server');
-
-export interface Context {
-  request: IncomingMessage & {
-    body: any;
-  };
-  response: ServerResponse;
-  getInfo: () => {
-    method?: string;
-    url: string;
-    headers: http.IncomingHttpHeaders;
-    params: Record<string, any>;
-    timestamp: string;
-  };
-  json: (data: any) => any;
-  error: (err: Error) => any;
-  params: { [key: string]: string | string[] | undefined };
-}
-
-export type RouteHandler = (ctx: Context) => any;
+const ContentTypes = {
+  yaml: 'application/x-yaml',
+  json: 'application/json',
+  html: 'text/html',
+  xml: 'application/xml',
+  csv: 'text/csv',
+};
 
 export class HTTPServer {
   private routes: { [key: string]: { [method: string]: RouteHandler } } = {};
-  private middlewares: ((ctx: Context, next: () => Promise<any>) => Promise<any>)[] = [];
+  private middlewares: ((ctx: HTTPContext, next: () => Promise<any>) => Promise<any>)[] = [];
   private config: ServerConfig;
   private basePath: string;
+  public database: DatabaseInterface;
 
   constructor(config: ServerConfig) {
-    this.config = config;
+    this.database = Database.get(config.database);
+    this.config = new ServerConfig(config);
   }
 
   apply(callback: (instance: HTTPServer) => any) {
     return callback(this);
   }
 
-  use(middleware: (ctx: Context, next: () => Promise<any>) => Promise<any>) {
+  use(middleware: (ctx: HTTPContext, next: () => Promise<any>) => Promise<any>) {
     this.middlewares.push(middleware);
   }
 
@@ -82,17 +74,23 @@ export class HTTPServer {
     this.routes[path][method] = handler;
   }
 
-  handleRequest = async (req: Context['request'], res: Context['response']) => {
+  handleRequest = async (req: HTTPContext['request'], res: HTTPContext['response']) => {
     const parsedUrl = parse(req.url || '', true);
     const { pathname, query } = parsedUrl;
     const method = req.method?.toLowerCase() || '';
+    const params = {
+      ...this.extractParams(pathname || ''),
+      ...query,
+    };
 
-    const params = this.extractParams(pathname || '');
+    res.setHeader('Content-Type', ContentTypes[this.config.format]);
 
-    const ctx: Context = {
+    const ctx: HTTPContext = {
       request: req,
       response: res,
-      params: { ...params, ...query },
+      params: params,
+      getParams: () => params,
+      getBody: () => req.body,
       getInfo: () => ({
         method: req.method,
         url: req.url,
@@ -100,28 +98,36 @@ export class HTTPServer {
         params: ctx.params,
         timestamp: new Date().toISOString(),
       }),
-      json: (data) => {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(data));
+      send: (data: any) => {
+        if (typeof data === 'undefined')
+          throw new Error('ctx.send(data): data cannot be undefined');
+
+        res.statusCode = 200;
+        return res.end(parseResponse(this.config.format, data));
       },
       error: (err) => {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
+        logger.error(err);
+        res.statusCode = 500;
         res.end(JSON.stringify({ error: err.message || 'Internal Server Error' }));
       },
     };
     
-    const route = this.routes[pathname || ''] && this.routes[pathname || ''][method];
+    try {
+      const route = Utils.findRoute(pathname, method, this.routes)
     
-    for (const mw of this.middlewares)
-      await mw(ctx, () => Promise.resolve());
+      for (const mw of this.middlewares)
+        await mw(ctx, () => Promise.resolve());
 
-    if (!route)
-      return ctx.error(new Error('Not Found'));
+      if (!route)
+        return ctx.error(new Error('Not Found'));
 
-    return await Promise.resolve(route(ctx));
+      return await Promise.resolve(route(ctx));
+    } catch (error) {
+      return ctx.error(error);
+    }
   }
 
-  extractParams(pathname: string): { [key: string]: string } {
+  extractParams(pathname: string): RequestParams {
     const params: { [key: string]: string } = {};
     const routeKeys = Object.keys(this.routes);
 
@@ -148,12 +154,14 @@ export class HTTPServer {
   }
 
   start() {
-    this.use(Utils.jsonParser);
-    this.use(Utils.formParser);
-    this.use(Utils.corsMiddleware);
-    this.apply(CRUDMiddleware);
+    this.apply(CRUDMiddlewareHTTP);
 
-    const server = http.createServer((req, res) => this.handleRequest(req as any, res));
+    const server = createServer(async (req, res) => {
+      for (const key in Utils)
+        await Utils[key](req, res, () => Promise.resolve());
+      
+      await Promise.resolve(this.handleRequest(req as any, res));
+    });
 
     server.listen(this.config.port, () => {
       logger.setOrigin(this.config.name);
@@ -184,11 +192,11 @@ server.use(async (ctx, next) => {
 server.group('/users', () => {
   server.get('/:id', (ctx) => {
     const { id } = ctx.params;
-    ctx.json({ message: `User ID: ${id}` });
+    ctx.send({ message: `User ID: ${id}` });
   });
 
   server.post('/', (ctx) => {
-    ctx.json({ message: 'User created' });
+    ctx.send({ message: 'User created' });
   });
 });
 

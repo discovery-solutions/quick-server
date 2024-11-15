@@ -13,22 +13,22 @@ export class Database {
   private databases: Map<string, DatabaseInterface> = new Map();
 
   private constructor(config: Config['databases']) {
-    for (const { key, type, ...params } of config) {
+    for (const { key, type, logs, ...params } of config) {
       switch (type) {
         case 'in-memory':
-          this.databases.set(key, new InMemoryDB());
+          this.databases.set(key, new InMemoryDB(logs));
           break;
         case 'mongodb':
-          this.databases.set(key, new MongoDB(params.uri, params.name));
+          this.databases.set(key, new MongoDB(params.uri, params.name, logs));
           break;
         case 'mysql':
-          this.databases.set(key, new MySqlDB(params));
+          this.databases.set(key, new MySqlDB(params, logs));
           break;
         case 'postgresql':
-          this.databases.set(key, new PostgresDb(params.uri));
+          this.databases.set(key, new PostgresDb(params.uri, logs));
           break;
         case 'sqlite':
-          this.databases.set(key, new SqliteDB(params.uri));
+          this.databases.set(key, new SqliteDB(params.uri, logs));
           break;
         default:
           throw new Error(`Database type ${type} not supported`);

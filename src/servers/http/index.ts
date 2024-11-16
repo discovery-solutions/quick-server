@@ -1,11 +1,11 @@
 import { HTTPContext, RequestParams, RouteHandler } from './types';
 import { Database, DatabaseInterface } from '../../features/databases';
 import { CRUDMiddlewareHTTP } from '../../features/crud';
+import { executeWithTimeout, findRoute, NativeMiddlewares } from './utils';
 import { parseResponse } from '../utils';
 import { ServerConfig } from '../../types';
 import { createServer } from 'http';
 import { Logger } from '../../utils/logger';
-import * as Utils from './utils';
 import { parse } from 'url';
 
 const logger = new Logger('http-server');
@@ -98,33 +98,52 @@ export class HTTPServer {
         params: ctx.params,
         timestamp: new Date().toISOString(),
       }),
+      status: function (code: number) {
+        res.statusCode = code;
+        return this;
+      },
       send: (data: any) => {
         if (typeof data === 'undefined')
           throw new Error('ctx.send(data): data cannot be undefined');
 
-        res.statusCode = 200;
-        return res.end(parseResponse(this.config.format, data));
+        if (!res.statusCode) res.statusCode = 200;
+
+        const payload = parseResponse(this.config.format, data);
+        logger.info(`Response for Incoming Request ${req.url}`, { payload });
+        return res.end(payload);
       },
-      error: (err) => {
-        logger.error(err);
-        res.statusCode = 500;
-        res.end(JSON.stringify({ error: err.message || 'Internal Server Error' }));
+      error: (error) => {
+        const { message, ...rest } = (error || {});
+        logger.error(`Error for Incoming Request ${req.url}`, error);
+
+        if (res.statusCode >= 200 || res.statusCode < 300) res.statusCode = 500;
+        res.end(JSON.stringify({ message: message || 'Internal Server Error', ...rest }));
       },
     };
-    
-    try {
-      const route = Utils.findRoute(pathname, method, this.routes)
-    
-      for (const mw of this.middlewares)
-        await mw(ctx, () => Promise.resolve());
 
-      if (!route)
-        return ctx.error(new Error('Not Found'));
+    let timer: NodeJS.Timeout;
 
-      return await Promise.resolve(route(ctx));
-    } catch (error) {
-      return ctx.error(error);
-    }
+    timer = setTimeout(() => {
+      ctx.status(408).error(new Error(`Request timeout exceeded (${this.config.request.timeout}ms)`));
+    }, 1000 * 2);
+
+    await (async () => {
+      try {
+        const route = findRoute(pathname, method, this.routes)
+      
+        for (const mw of this.middlewares)
+          await mw(ctx, () => Promise.resolve());
+  
+        if (!route)
+          throw new Error('Not Found');
+  
+        await Promise.resolve(route(ctx));
+      } catch (error) {
+        ctx.error(error);
+      } finally {
+        return clearTimeout(timer);
+      }
+    })();
   }
 
   extractParams(pathname: string): RequestParams {
@@ -157,10 +176,10 @@ export class HTTPServer {
     this.apply(CRUDMiddlewareHTTP);
 
     const server = createServer(async (req, res) => {
-      for (const key in Utils)
-        await Utils[key](req, res, () => Promise.resolve());
+      for (const key in NativeMiddlewares)
+        await NativeMiddlewares[key](req, res, () => Promise.resolve());
       
-      await Promise.resolve(this.handleRequest(req as any, res));
+      return this.handleRequest(req as any, res);
     });
 
     server.listen(this.config.port, () => {

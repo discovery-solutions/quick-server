@@ -1,8 +1,11 @@
 import { EntityConfig } from "../../types";
+import { Entity } from "./entity";
 
-export class Entity {
-  private static instance: Entity | null = null;
-  private entities: Map<string, EntityConfig> = new Map();
+export { Entity };
+
+export class EntityManager {
+  private static instance: EntityManager | null = null;
+  private entities: Map<string, Entity> = new Map();
   private static raw: EntityConfig[];
 
   private constructor() {}
@@ -10,28 +13,28 @@ export class Entity {
   public static initialize(entities: EntityConfig[]) {
     this.raw = entities;
 
-    if (Entity.instance) return ;
+    if (EntityManager.instance) return ;
       
-    Entity.instance = new Entity();
+    EntityManager.instance = new EntityManager();
 
-    for (const entity of entities)
-      Entity.instance.entities.set(entity.name, entity);
+    for (const item of entities)
+      EntityManager.instance.entities.set(item.name, new Entity(item));
   }
 
-  public static get(identifier: string): EntityConfig | undefined {
-    if (!Entity.instance)
-      throw new Error(`Entity ${identifier} not initialized. Call Entity.initialize(entities) first.`);
+  public static get(identifier: string): Entity | undefined {
+    if (!EntityManager.instance)
+      throw new Error(`Entity ${identifier} not initialized. Call EntityManager.initialize(entities) first.`);
 
-    const entity = Entity.instance.entities.get(identifier);
+    const entity = EntityManager.instance.entities.get(identifier);
 
     if (entity) return entity;
 
-    const { alias } = Entity.raw.find(e => e.alias === identifier);
+    const { alias } = EntityManager.raw.find(e => e.alias === identifier);
 
-    return Entity.instance.entities.get(alias);
+    return EntityManager.instance.entities.get(alias);
   }
 
   public static list() {
-    return Entity.instance.entities.keys();
+    return EntityManager.instance.entities.keys();
   }
 }

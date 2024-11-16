@@ -41,6 +41,7 @@ export class SocketServer {
         getBody: () => message.body,
         error: (err) => socket.send({ error: err.message || 'Error' }),
         send: (data) => socket.send(parseResponse(this.config.format, data)),
+        status: function() { return this },
         getInfo: () => ({
           url: socket.url,
           message: message,

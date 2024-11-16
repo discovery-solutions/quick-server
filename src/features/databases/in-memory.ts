@@ -35,43 +35,52 @@ export class InMemoryDB implements DatabaseInterface {
   }
 
   async get<T>(table: string, query: object): Promise<T[]> {
+    this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const data = this.db[table] || [];
-    return data.filter(item => {
+    const result = data.filter(item => {
       return Object.keys(query).every(key => item[key] === query[key]);
     });
-  }
-
-  async findById<T>(table: string, id: string): Promise<T | undefined> {
-    const data = this.db[table] || [];
-    return data.find(item => item.id === id);
+    this.logger.log(`Fetched ${result.length} record(s) from table "${table}".`);
+    return result;
   }
 
   async update<T>(table: string, query: object, data: T): Promise<void> {
+    this.logger.log(`Updating records in table "${table}" with query: ${JSON.stringify(query)}`);
     const items = this.db[table] || [];
-    const index = items.findIndex(item => {
+    const targets = items.filter(item => {
       return Object.keys(query).every(key => item[key] === query[key] && !item.deletedAt);
     });
 
-    if (index < 0) throw new Error('Invalid ID');
+    if (targets.length === 0)
+      throw new Error('Invalid Query: ' + JSON.stringify(query));
     
-    this.db[table][index] = {
-      ...this.db[table][index],
-      ...data,
-      updatedAt: new Date(),
+    for (const target of targets) {
+      const index = items.findIndex(item => item.id === target.id);
+      this.db[table][index] = {
+        ...this.db[table][index],
+        ...data,
+        updatedAt: new Date(),
+      }
     }
+    this.logger.log(`Matched ${targets.length} record(s) and modified ${targets.length} record(s) in table "${table}".`);
   }
 
   async delete(table: string, query: object): Promise<void> {
+    const initialCount = this.db[table].length;
+    this.logger.log(`Deleting records from table "${table}" with query: ${JSON.stringify(query)}`);
     const data = this.db[table] || [];
     this.db[table] = data.filter(item => {
       return !Object.keys(query).every(key => item[key] === query[key]);
     });
+    const deletedCount = initialCount - this.db[table].length;
+    this.logger.log(`Deleted ${deletedCount} record(s) from table "${table}".`);
   }
 
   async bulkInsert<T>(table: string, raw: T[]): Promise<void> {
     if (!this.db[table])
       this.db[table] = [];
     
+    this.logger.log(`Performing bulk insert into table "${table}" with ${raw.length} record(s).`);
     const data = raw.map(item => ({
       id: uuid(),
       ...item,
@@ -81,15 +90,24 @@ export class InMemoryDB implements DatabaseInterface {
     }));
 
     this.db[table] = [...this.db[table], ...data];
+    this.logger.log(`Bulk insert completed. Inserted ${raw.length} record(s) into table "${table}".`);
   }
 
   async bulkUpdate<T>(table: string, data: T[]): Promise<void> {
+    this.logger.log(`Performing bulk update on table "${table}" with ${data.length} record(s).`);
+    
     for (const item of data)
       await this.update(table, { id: item['id'] }, item);
+
+    this.logger.log(`Bulk update completed. Matched ${data.length} and modified ${data.length} record(s) in table "${table}".`);
   }
 
   async bulkDelete<T>(table: string, data: T[]): Promise<void> {
+    this.logger.log(`Performing bulk delete from table "${table}" with ${data.length} record(s).`);
+
     const items = this.db[table] || [];
     this.db[table] = items.filter(item => !data.some(d => d['id'] === item['id']));
+
+    this.logger.log(`Bulk delete completed. Deleted ${data.length} record(s) from table "${table}".`);
   }
 }

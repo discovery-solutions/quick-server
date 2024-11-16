@@ -1,10 +1,10 @@
 import { ControllerCRUD } from "./controller";
 import { SocketServer } from "../../servers/socket";
 import { HTTPServer } from "../../servers/http";
-import { Entity } from "../entity";
+import { EntityManager } from "../entity";
 
 export const CRUDMiddlewareHTTP = async (server: HTTPServer) => {
-  for (const key of Entity.list()) {
+  for (const key of EntityManager.list()) {
     const crud = new ControllerCRUD(key);
 
     crud.setDatabase(server.database);
@@ -12,7 +12,7 @@ export const CRUDMiddlewareHTTP = async (server: HTTPServer) => {
     server.group(`/${key}`, () => {
       server.get('/', (ctx) => crud.list(ctx));
       server.post('/', (ctx) => crud.create(ctx));
-      server.get('/:id', (ctx) => crud.read(ctx));
+      server.get('/:id', (ctx) => crud.get(ctx));
       server.put('/:id', (ctx) => crud.update(ctx));
       server.delete('/:id', (ctx) => crud.delete(ctx));
 
@@ -25,12 +25,12 @@ export const CRUDMiddlewareHTTP = async (server: HTTPServer) => {
 };
 
 export const CRUDMiddlewareSocket = async (server: SocketServer) => {
-  for (const key of Entity.list()) {
+  for (const key of EntityManager.list()) {
     const crud = new ControllerCRUD(key);
 
     crud.setDatabase(server.database);
     
-    server.on(`get_${key}`, (ctx) => crud.read(ctx));
+    server.on(`get_${key}`, (ctx) => crud.get(ctx));
     server.on(`list_${key}`, (ctx) => crud.list(ctx));
     server.on(`create_${key}`, (ctx) => crud.create(ctx));
     server.on(`update_${key}`, (ctx) => crud.update(ctx));

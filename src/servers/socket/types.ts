@@ -21,6 +21,7 @@ export interface WebSocketContext {
   getBody: () => any;
   error: (err: Error) => any;
   send: (data: any) => any;
+  status: (code: number) => any;
 }
 
 export type WebSocketHandler = (ctx: WebSocketContext) => void;

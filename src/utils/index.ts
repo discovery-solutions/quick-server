@@ -4,3 +4,11 @@ export const uuid = () => {
   const random = Math.floor(1000 + Math.random() * 9000);
   return timestamp + random;
 }
+
+export function capitalize(string) {
+  if (!string) return '';
+  return string
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+}

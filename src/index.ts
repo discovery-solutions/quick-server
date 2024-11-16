@@ -1,10 +1,10 @@
+import { EntityManager } from './features/entity';
 import { Database } from './features/databases';
-import { Entity } from './features/entity';
+import { loadYaml } from './utils/file';
+import { extract } from './utils/config';
+import { Logger } from './utils/logger';
 import { Server } from './servers';
 import { Config } from './types';
-import { extract } from './utils/config';
-import { loadYaml } from './utils/file';
-import { Logger } from './utils/logger';
 import path from 'path';
 
 const logger = new Logger();
@@ -28,7 +28,7 @@ export class QuickServer {
 
   async start() {
     logger.log('Initializing Entities...');
-    Entity.initialize(this.config.entities);
+    EntityManager.initialize(this.config.entities);
     
     Server.start();
   }

@@ -11,17 +11,17 @@ servers:
     type: "rest"
     format: "json"
     database: "main"
-    # request:
-    #   limit: 10
-    #   timeout: 1000         # mil segundos
+    request:
+      limit: 10             # dez items por pagina
+      timeout: 10           # dez segundos
   - name: "Socket-Server"
     port: 3500
     type: "socket"
     # format: "csv"
     database: "mongodb"
     # request:
-    #   limit: 1000
-    #   timeout: 60           # sessenta segundos
+    #   limit: 1000         # mil items por pagina
+    #   timeout: 60         # sessenta segundos
 
 auth:
   strategies:

@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { RouteHandler } from './types';
+import { HTTPContext, RouteHandler } from './types';
 
-export function jsonParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
+function jsonParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
   return new Promise(resolve => {
     if (request.headers['content-type']?.includes('application/json')) {
       let rawBody = '';
@@ -23,7 +23,7 @@ export function jsonParser(request: IncomingMessage, _: ServerResponse, __: () =
   });
 }
 
-export function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
+function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
   return new Promise(resolve => {
     if (request.headers['content-type']?.includes('multipart/form-data')) {
       const boundary = request.headers['content-type']?.split('boundary=')[1];
@@ -53,7 +53,7 @@ export function formParser(request: IncomingMessage, _: ServerResponse, __: () =
   });
 }
 
-export async function corsMiddleware(request: IncomingMessage, response: ServerResponse, next: () => Promise<any>) {
+async function corsMiddleware(request: IncomingMessage, response: ServerResponse, next: () => Promise<any>) {
   const allowedOrigins = ['*'];
   const origin = request.headers.origin;
 
@@ -69,6 +69,29 @@ export async function corsMiddleware(request: IncomingMessage, response: ServerR
   response.statusCode = 204;
   response.end();
 }
+
+export const NativeMiddlewares = { jsonParser, formParser, corsMiddleware };
+
+export function TimeoutMiddleware(timeout: number) {
+  return async (ctx, next) => {;
+    let timer: NodeJS.Timeout;
+
+    try {
+      await Promise.race([
+        new Promise((_, reject) => {
+          timer = setTimeout(() => {
+            reject(new Error(`Request timeout exceeded (${timeout}ms)`));
+          }, timeout);
+        }),
+        next(),
+      ]);
+    } catch (err) {
+      ctx.status(408).send({ error: err.message });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+};
 
 export function findRoute(pathname: string, method: string, routes: any): RouteHandler | undefined {
   for (const route of Object.keys(routes)) {
@@ -96,4 +119,31 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
   }
 
   return undefined;
+}
+
+export async function executeWithTimeout(ctx: HTTPContext, timeout: number, functionToExecute: Function) {
+  let timer: NodeJS.Timeout;
+
+  // const timeoutPromise = new Promise((_, reject) => {
+  //   console.log('iniciando timer: ' + timeout);
+    
+  //   timer = setTimeout(() => {
+  //     console.log('deu timeout')
+  //     // reject(new Error(`Request timeout exceeded (${timeout}ms)`));
+  //   }, 1000);
+  // });
+
+  try {
+    timer = setTimeout(() => {
+      console.log('deu timeout')
+      new Error(`Request timeout exceeded (${timeout}ms)`);
+    }, timeout);
+
+    return functionToExecute();
+    // await Promise.race([ timeoutPromise, functionToExecute() ]);
+  } catch (err) {
+    ctx.status(408).send({ error: err.message });
+  } finally {
+    clearTimeout(timer);
+  }
 }

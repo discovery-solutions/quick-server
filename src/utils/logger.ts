@@ -27,17 +27,22 @@ export class Logger {
     return JSON.stringify(data, null, config?.formatted ? 2 : 0);
   }
 
-  private write(level: string, message: any, meta: Record<string, any>) {
+  private write(level: string, raw: any, meta: Record<string, any>) {
     if (!this.active) return null;
     
     const id = uuid();
     const prefix = `[${this.origin}] #${id}`;
-    const data = (() => {
-      if (config.verbose === false) return { message, ...meta };
+    const { message, ...data } = (() => {
+      if (config.verbose === false) {
+        if (typeof raw === 'object')
+          return raw;
+
+        return { message: raw, ...meta };
+      }
 
       return {
         timestamp: new Date().toISOString(),
-        message: message,
+        message: raw,
         level: level,
         logId: id,
         pid: process.pid,
@@ -45,11 +50,8 @@ export class Logger {
       }
     })();
 
-    if (typeof message === 'string')
-      delete data.message;
-
-    if (Object.keys(data).length === 0)
-      return console.log(`${prefix}: ${message}`);
+    if (Object.keys(data).length === 0 || raw instanceof Error)
+      return console.log(`${prefix}:`, message || raw);
 
     const breakLine = config?.formatted ? '\n' : ' ';
     console.log(`${prefix}: ${[message, breakLine, this.parse(data)].join('')}`);

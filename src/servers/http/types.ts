@@ -19,6 +19,7 @@ export interface HTTPContext {
   params?: RequestParams;
   error: (err: Error) => any;
   send: (data: any) => any;
+  status: (code: number) => any;
 }
 
 export type RouteHandler = (ctx: HTTPContext) => any;

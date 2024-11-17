@@ -1,6 +1,5 @@
 import type { Message, WebSocketContext, WebSocketHandler } from './types';
 import { Database, DatabaseInterface } from '../../features/databases';
-import { CRUDMiddlewareSocket } from '../../features/crud';
 import type { ServerConfig } from '../../types';
 import { parseResponse } from '../utils';
 import * as WebSocket from 'ws';
@@ -39,11 +38,17 @@ export class SocketServer {
         message,
         getParams: () => message.params,
         getBody: () => message.body,
+        getHeaders: () => socket.headers,
+        getHeader: (key: string) => socket.headers[key],
         error: (err) => socket.send({ error: err.message || 'Error' }),
         send: (data) => socket.send(parseResponse(this.config.format, data)),
         status: function() { return this },
         getInfo: () => ({
+          database: this.config.database,
+          server: this.config.name,
           url: socket.url,
+          params: message.params,
+          basePath: `https://${socket.headers.host}${socket.url}`,
           message: message,
           headers: socket.headers,
           timestamp: new Date().toISOString(),
@@ -67,8 +72,6 @@ export class SocketServer {
   }
 
   start() {
-    this.apply(CRUDMiddlewareSocket);
-
     const wss = new WebSocket.Server({ port: this.config.port });
 
     wss.on('connection', (socket) => this.handleConnection(socket));

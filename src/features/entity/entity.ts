@@ -31,6 +31,26 @@ export class Entity implements EntityConfig {
     }
   }
 
+  public parse(data: Record<string, any>) {
+    const parsedData: Record<string, any> = {};
+
+    for (const key in this.fields)
+      if (data[key] !== undefined) parsedData[key] = data[key];
+      else parsedData[key] = null;
+
+    return parsedData;
+  }
+
+  public secure(data: Record<string, any>) {
+    const securedData: Record<string, any> = {};
+    
+    for (const key in data)
+      if (!this.fields[key]?.secure)
+        securedData[key] = data[key];
+      
+    return securedData;
+  }
+
   public validate(data: Record<string, any>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
     

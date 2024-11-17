@@ -2,6 +2,8 @@ import { SocketServer } from './socket';
 import { HTTPServer } from './http';
 import { Config } from '../types';
 import { Logger } from '../utils/logger';
+import { Auth } from '../features/auth';
+import { CRUD } from '../features/crud';
 
 const logger = new Logger();
 
@@ -45,7 +47,10 @@ export class Server {
 
     logger.log('Starting servers...');
     Server.instance.servers.forEach((server, key) => {
+      server.apply(Auth.middleware);
+      server.apply(CRUD.middleware);
       server.use(Logger.middleware);
+
       if (server) server.start();
     });
   }

@@ -1,7 +1,6 @@
 import { findRoute, NativeMiddlewares } from './utils';
 import { Database, DatabaseInterface } from '../../features/databases';
 import { HTTPContext, RouteHandler } from './types';
-import { CRUDMiddlewareHTTP } from '../../features/crud';
 import { parseResponse } from '../utils';
 import { RequestParams } from '../types';
 import { ServerConfig } from '../../types';
@@ -91,9 +90,14 @@ export class HTTPServer {
       params: params,
       getParams: () => params,
       getBody: () => req.body,
+      getHeaders: () => req.headers,
+      getHeader: (key: string) => req.headers[key],
       getInfo: () => ({
+        database: this.config.database,
+        server: this.config.name,
         method: req.method,
         url: req.url,
+        basePath: `https://${req.headers.host}${req.url}`,
         headers: req.headers,
         params: ctx.params,
         timestamp: new Date().toISOString(),
@@ -114,7 +118,8 @@ export class HTTPServer {
       },
       error: (error) => {
         const { message, ...rest } = (error || {});
-        logger.error(`Error for Incoming Request ${req.url}`, error);
+        logger.error(`Error for Incoming Request ${req.url}`);
+        logger.error(error);
 
         if (res.statusCode >= 200 || res.statusCode < 300) res.statusCode = 500;
         res.end(JSON.stringify({ message: message || 'Internal Server Error', ...rest }));
@@ -129,6 +134,7 @@ export class HTTPServer {
 
     await (async () => {
       try {
+        console.log(this.routes)
         const route = findRoute(pathname, method, this.routes)
       
         for (const mw of this.middlewares)
@@ -173,8 +179,6 @@ export class HTTPServer {
   }
 
   start() {
-    this.apply(CRUDMiddlewareHTTP);
-
     const server = createServer(async (req, res) => {
       for (const key in NativeMiddlewares)
         await NativeMiddlewares[key](req, res, () => Promise.resolve());

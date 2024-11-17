@@ -28,29 +28,50 @@ auth:
     jwt:
       secret: "super_secret_key"
       expiresIn: "1h"
+      entity:
+        name: "user"
+        identifiers: 
+          - "email"
+          - "password"
     oauth:
       google:
         clientId: "google_oauth_client_id"
         clientSecret: "google_oauth_client_secret"
         authUrl: "https://accounts.google.com/o/oauth2/auth"
         tokenUrl: "https://oauth2.googleapis.com/token"
+        refreshToken:
+          enabled: true
+          expiration: "7d"
+        entity:
+          name: "user"
+          identifier: "email"
+          mapper:             # [name of the user key in the strategy response]: respective key name in entity
+            email: email
+            name: name
+            picture: avatar
       github:
         clientId: "github_oauth_client_id"
         clientSecret: "github_oauth_client_secret"
         authUrl: "https://github.com/login/oauth/authorize"
         tokenUrl: "https://github.com/login/oauth/access_token"
-    refreshToken:
-      enabled: true
-      expiration: "7d"
+        refreshToken:
+          enabled: true
+          expiration: "7d"
+        entity:
+          name: "user"
+          identifier: "email"
+          mapper:             # [name of the user key in the strategy response]: respective key name in entity
+            email: email
+            name: name
+            picture: avatar
 
   permissions:
-    default: 
-      "*": 
-        get: false
-        list: false
-        insert: false
-        update: false
-        delete: false
+    default:
+      get: false
+      list: false
+      insert: false
+      update: false
+      delete: false
     entities:
       user:
         "*": 

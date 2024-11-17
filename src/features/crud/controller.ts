@@ -13,21 +13,16 @@ export class ControllerCRUD {
     this.entity = EntityManager.get(model);
   }
 
-  setDatabase(database: DatabaseInterface) {
+  setDatabase = (database: DatabaseInterface) => {
     this.database = database;
   }
 
-  async list(ctx: HTTPContext | WebSocketContext) {
+  list = async (ctx: HTTPContext | WebSocketContext) => {
     const entities = await this.database.get(this.model, {});
-
-    return new Promise(resolve => {
-      setInterval(() => {
-        resolve(ctx.send(entities));
-      }, 1000 * 70);
-    })
+    return ctx.send(entities);
   }
 
-  async create(ctx: HTTPContext | WebSocketContext) {
+  create = async (ctx: HTTPContext | WebSocketContext)  =>{
     const data = ctx.getBody();
     const { valid, errors } = this.entity.validate(data);
 
@@ -39,7 +34,7 @@ export class ControllerCRUD {
     return ctx.send({ id });
   }
 
-  async get(ctx: HTTPContext | WebSocketContext) {
+  get = async (ctx: HTTPContext | WebSocketContext) => {
     const { id } = ctx.getParams();
     const data = await this.database.get(this.model, { id });
 
@@ -48,7 +43,7 @@ export class ControllerCRUD {
     return ctx.send(data);
   }
 
-  async update(ctx: HTTPContext | WebSocketContext) {
+  update = async (ctx: HTTPContext | WebSocketContext) => {
     const data = ctx.getBody();
     const { id } = ctx.getParams();
     const { valid, errors } = this.entity.validate(data);
@@ -61,7 +56,7 @@ export class ControllerCRUD {
     return ctx.send({ message: 'Entity updated successfully' });
   }
 
-  async delete(ctx: HTTPContext | WebSocketContext) {
+  delete = async (ctx: HTTPContext | WebSocketContext) => {
     const { id } = ctx.getParams();
     
     await this.database.delete(this.model, { id });
@@ -69,17 +64,17 @@ export class ControllerCRUD {
     return ctx.send({ message: 'Entity deleted successfully' });
   }
 
-  async bulkInsert(ctx: HTTPContext | WebSocketContext) {
+  bulkInsert = async (ctx: HTTPContext | WebSocketContext) => {
     const data = await this.database.bulkInsert(this.model, ctx.getBody());
     return ctx.send({ message: 'Entities inserted successfully', data });
   }
 
-  async bulkUpdate(ctx: HTTPContext | WebSocketContext) {
+  bulkUpdate = async (ctx: HTTPContext | WebSocketContext) => {
     const data = await this.database.bulkUpdate(this.model, ctx.getBody());
     return ctx.send({ message: 'Entities updated successfully', data });
   }
 
-  async bulkDelete(ctx: HTTPContext | WebSocketContext) {
+  bulkDelete = async (ctx: HTTPContext | WebSocketContext) => {
     const data = await this.database.bulkDelete(this.model, ctx.getBody());
     return ctx.send({ message: 'Entities deleted successfully', data });
   }

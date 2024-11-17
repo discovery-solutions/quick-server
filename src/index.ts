@@ -5,6 +5,7 @@ import { extract } from './utils/config';
 import { Logger } from './utils/logger';
 import { Server } from './servers';
 import { Config } from './types';
+import { Auth } from './features/auth';
 import path from 'path';
 
 const logger = new Logger();
@@ -24,6 +25,9 @@ export class QuickServer {
 
     logger.log('Initializing Servers');
     Server.initialize(this.config.servers);
+
+    logger.log('Initializing Auth Setup');
+    Auth.initialize(this.config.auth);
   }
 
   async start() {

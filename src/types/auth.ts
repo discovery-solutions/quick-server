@@ -5,20 +5,29 @@ export interface OAuthStrategy {
   clientSecret: string;
   authUrl: string;
   tokenUrl: string;
+  entity: {
+    name: string;
+    identifier: string;
+    mapper: Record<string, string>;
+  }
+  refreshToken?: {
+    enabled: boolean;
+    expiration: string;
+  };
 }
 
 export interface AuthStrategies {
   jwt?: {
     secret: string;
     expiresIn: string;
+    entity: {
+      name: string;
+      identifiers: string[];
+    }
   };
   oauth?: {
     google?: OAuthStrategy;
     facebook?: OAuthStrategy;
-  };
-  refreshToken?: {
-    enabled: boolean;
-    expiration: string;
   };
 }
 
@@ -39,43 +48,18 @@ export class AuthConfig implements AuthConfigParams {
   permissions: AuthConfigParams['permissions'];
 
   constructor(parameters: Partial<AuthConfigParams> = {}) {
-    const defaultConfig: AuthConfigParams = {
-      strategies: {
-        jwt: {
-          secret: "super_secret_key",
-          expiresIn: "1h",
-        },
-        refreshToken: {
-          enabled: true,
-          expiration: "7d",
-        },
-      },
-      permissions: {
-        entities: {},
-        default: {
-          get: true,
-          list: true,
-          insert: true,
-          update: true,
-          delete: true,
-        },
-      },
-    };
-
-    this.strategies = {
-      ...defaultConfig.strategies,
-      ...(parameters.strategies || {}),
-    };
+    this.strategies = parameters.strategies;
 
     this.permissions = {
+      entities: parameters.permissions?.entities || {},
       default: {
-        ...defaultConfig.permissions.default,
+        get: true,
+        list: true,
+        insert: true,
+        update: true,
+        delete: true,
         ...(parameters.permissions?.default || {}),
       },
-      entities: {
-        ...defaultConfig.permissions.entities,
-        ...(parameters.permissions?.entities || {}),
-      },
-    };
+    }
   }
 }

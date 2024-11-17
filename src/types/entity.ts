@@ -19,7 +19,7 @@ export interface EntityConfig {
     [key: string]: EntityField | string;
   };
   auth?: {
-    type: 'jwt';
+    type: 'jwt' | 'oauth';
     fields: string[];
     permissions: {
       [role: string]: EntityPermission;

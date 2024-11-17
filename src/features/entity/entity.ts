@@ -41,7 +41,10 @@ export class Entity implements EntityConfig {
     return parsedData;
   }
 
-  public secure(data: Record<string, any>) {
+  public secure(data: Record<string, any> | Record<string, any>[]) {
+    if (Array.isArray(data))
+      return data.map((item) => this.secure(item));
+
     const securedData: Record<string, any> = {};
     
     for (const key in data)

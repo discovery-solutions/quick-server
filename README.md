@@ -155,17 +155,15 @@ This will start both the WebSocket and REST servers based on the configuration.
   - [x] MySQL
   - [x] SQLite
 - [ ] **Authentication**  
-  - [ ] JWT  
-  - [ ] Simple Token  
-  - [ ] Authentication Routes  
+  - [x] JWT  
+  - [x] Authentication Routes  
   - [ ] Authorization Handler
-- [ ] **Tests**  
-  - [ ] Create Tests for Features
-- [ ] **Interceptors**  
-  - [ ] Add Custom Request Handlers
-- [x] **Logger**  
+- [x] **Developer**  
   - [x] Add Custom Logger with Metadata
   - [x] Add Request and API Transaction Logger
+  - [x] Support to ENV variables
+- [ ] **Interceptors**  
+  - [ ] Add Custom Request Handlers
 - [ ] **Full Search**  
   - [ ] Search for All Entities
 - [ ] **Documentation**  

@@ -1,4 +1,5 @@
 developer:
+  env: ".env"
   logger:
     formatted: true
     verbose: false
@@ -10,18 +11,14 @@ servers:
     port: 3501
     type: "rest"
     format: "json"
-    database: "main"
+    database: "mongodb"
     request:
       limit: 10             # dez items por pagina
       timeout: 10           # dez segundos
   - name: "Socket-Server"
     port: 3500
     type: "socket"
-    # format: "csv"
     database: "mongodb"
-    # request:
-    #   limit: 1000         # mil items por pagina
-    #   timeout: 60         # sessenta segundos
 
 auth:
   strategies:
@@ -90,13 +87,14 @@ auth:
           delete: false
 
 databases:
-  - type: in-memory
+  # - type: in-memory
+  #   logs: true
+  #   key: "main"
+  - type: mongodb
+    key: "mongodb"
+    uri: "{MONGODB_URI}"
+    name: "quick-server"
     # logs: true
-    key: "main"
-  # - type: mongodb
-  #   key: "mongodb"
-  #   uri: "mongodb+srv://..."
-  #   name: "my-mongo-db"
 
 entities:
   - name: "user"

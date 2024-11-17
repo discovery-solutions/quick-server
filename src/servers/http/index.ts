@@ -134,7 +134,6 @@ export class HTTPServer {
 
     await (async () => {
       try {
-        console.log(this.routes)
         const route = findRoute(pathname, method, this.routes)
       
         for (const mw of this.middlewares)
@@ -207,7 +206,7 @@ const server = new HTTPServer({
 
 // Middleware global
 server.use(async (ctx, next) => {
-  console.log(`Request made to ${ctx.request.url}`);
+  log(`Request made to ${ctx.request.url}`);
   await next();
 });
 

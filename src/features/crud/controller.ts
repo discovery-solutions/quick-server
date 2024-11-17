@@ -19,7 +19,7 @@ export class ControllerCRUD {
 
   list = async (ctx: HTTPContext | WebSocketContext) => {
     const entities = await this.database.get(this.model, {});
-    return ctx.send(entities);
+    return ctx.send(this.entity.secure(entities));
   }
 
   create = async (ctx: HTTPContext | WebSocketContext)  =>{
@@ -36,11 +36,11 @@ export class ControllerCRUD {
 
   get = async (ctx: HTTPContext | WebSocketContext) => {
     const { id } = ctx.getParams();
-    const data = await this.database.get(this.model, { id });
+    const [data] = await this.database.get(this.model, { id });
 
     if (!data) return ctx.error(new Error('Entity not found'));
     
-    return ctx.send(data);
+    return ctx.send(this.entity.secure(data));
   }
 
   update = async (ctx: HTTPContext | WebSocketContext) => {
@@ -65,17 +65,17 @@ export class ControllerCRUD {
   }
 
   bulkInsert = async (ctx: HTTPContext | WebSocketContext) => {
-    const data = await this.database.bulkInsert(this.model, ctx.getBody());
-    return ctx.send({ message: 'Entities inserted successfully', data });
+    await this.database.bulkInsert(this.model, ctx.getBody());
+    return ctx.send({ message: 'Entities inserted successfully' });
   }
 
   bulkUpdate = async (ctx: HTTPContext | WebSocketContext) => {
-    const data = await this.database.bulkUpdate(this.model, ctx.getBody());
-    return ctx.send({ message: 'Entities updated successfully', data });
+    await this.database.bulkUpdate(this.model, ctx.getBody());
+    return ctx.send({ message: 'Entities updated successfully' });
   }
 
   bulkDelete = async (ctx: HTTPContext | WebSocketContext) => {
-    const data = await this.database.bulkDelete(this.model, ctx.getBody());
-    return ctx.send({ message: 'Entities deleted successfully', data });
+    await this.database.bulkDelete(this.model, ctx.getBody());
+    return ctx.send({ message: 'Entities deleted successfully' });
   }
 }

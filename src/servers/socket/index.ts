@@ -95,7 +95,7 @@ const wsServer = new SocketServer({
 
 // Middleware global
 wsServer.use(async (ctx, next) => {
-  console.log(`Message received: ${ctx.message}`);
+  log(`Message received: ${ctx.message}`);
   await next();
 });
 

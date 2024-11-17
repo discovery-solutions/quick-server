@@ -13,6 +13,15 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Connected to MongoDB database: "${dbName}"`);
   }
 
+  private parseQuery(query: Record<string, any>) {
+    if (query.id) {
+      query._id = new ObjectId(String(query.id));
+      delete query.id;
+    }
+
+    return query;
+  }
+
   async insert<T>(table: string, data: T): Promise<ObjectId> {
     this.logger.log(`Inserting a record into table "${table}"...`);
     const collection: Collection = this.db.collection(table);
@@ -21,25 +30,25 @@ export class MongoDB implements DatabaseInterface {
     return res.insertedId;
   }
 
-  async get<T>(table: string, query: object): Promise<T[]> {
+  async get<T>(table: string, query: Record<string, any>): Promise<T[]> {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
-    const result = await collection.find(query).toArray();
+    const result = await collection.find(this.parseQuery(query)).toArray();
     this.logger.log(`Fetched ${result.length} record(s) from table "${table}".`);
     return result as T[];
   }
 
-  async update<T>(table: string, query: object, data: T): Promise<void> {
+  async update<T>(table: string, query: Record<string, any>, data: T): Promise<void> {
     this.logger.log(`Updating records in table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
-    const result = await collection.updateOne(query, { $set: data });
+    const result = await collection.updateOne(this.parseQuery(query), { $set: data });
     this.logger.log(`Matched ${result.matchedCount} record(s) and modified ${result.modifiedCount} record(s) in table "${table}".`);
   }
 
-  async delete(table: string, query: object): Promise<void> {
+  async delete(table: string, query: Record<string, any>): Promise<void> {
     this.logger.log(`Deleting records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
-    const result = await collection.deleteOne(query);
+    const result = await collection.deleteOne(this.parseQuery(query));
     this.logger.log(`Deleted ${result.deletedCount} record(s) from table "${table}".`);
   }
 
@@ -55,7 +64,7 @@ export class MongoDB implements DatabaseInterface {
     const collection: Collection = this.db.collection(table);
     const bulkOps = data.map(item => ({
       updateOne: {
-        filter: { id: item['id'] },
+        filter: { _id: item['_id'] },
         update: { $set: item },
         upsert: true,
       }
@@ -67,8 +76,8 @@ export class MongoDB implements DatabaseInterface {
   async bulkDelete<T>(table: string, data: T[]): Promise<void> {
     this.logger.log(`Performing bulk delete from table "${table}" with ${data.length} record(s).`);
     const collection: Collection = this.db.collection(table);
-    const ids = data.map(item => item['id']);
-    const result = await collection.deleteMany({ id: { $in: ids } });
+    const ids = data.map(item => item['_id']);
+    const result = await collection.deleteMany({ _id: { $in: ids } });
     this.logger.log(`Bulk delete completed. Deleted ${result.deletedCount} record(s) from table "${table}".`);
   }
 }

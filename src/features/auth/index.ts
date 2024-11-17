@@ -1,7 +1,4 @@
-import { AuthConfig, OAuthStrategy } from "../../types";
-import { SocketServer } from "../../servers/socket";
-import { HTTPServer } from "../../servers/http";
-import { Authentication } from "./authentication";
+import { AuthConfig, OAuthStrategy } from '../../types';
 
 export class Auth {
   private static instance: Auth | null = null;
@@ -41,18 +38,10 @@ export class Auth {
       throw new Error(`AuthConfig not initialized. Call Auth.initialize(entities) first.`);
 
     const { permissions } = Auth.instance.config;
-    return permissions[key] || permissions.entities[key];
+    const permission = permissions[key] || permissions.entities[key];
+
+    if (permission) return permission;
+    return permissions.default;
   }
-
-  public static middleware(server: HTTPServer | SocketServer) {
-    Authentication.middleware(server);
-  }
-}
-
-export const AuthMiddlewareHTTP = () => {
-
-}
-
-export const AuthMiddlewareSocket = () => {
 
 }

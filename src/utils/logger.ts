@@ -1,3 +1,4 @@
+import { Context } from "../servers";
 import { uuid } from ".";
 
 interface LoggerConfig {
@@ -77,10 +78,9 @@ export class Logger {
     this.write('debug', message, meta);
   }
 
-  static middleware(req, next) {
+  static middleware(ctx: Context) {
     const logger = new Logger();
-    logger.log('Incoming Request', req.getInfo());
-    return next();
+    logger.log('Incoming Request', ctx.getInfo());
   }
 
   static setConfig({ formatted, verbose }: LoggerConfig) {

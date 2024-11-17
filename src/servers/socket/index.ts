@@ -1,13 +1,15 @@
-import type { Message, WebSocketContext, WebSocketHandler } from './types';
+import type { Message, SocketContext, WebSocketHandler } from './types';
 import { Database, DatabaseInterface } from '../../features/databases';
 import type { ServerConfig } from '../../types';
 import { parseResponse } from '../utils';
 import * as WebSocket from 'ws';
+import { Context } from '../types';
 import { Logger } from '../../utils/logger';
 
+export { SocketContext };
 export class SocketServer {
   private routes: { [path: string]: WebSocketHandler } = {};
-  private middlewares: ((ctx: WebSocketContext, next: () => Promise<void>) => Promise<void>)[] = [];
+  private middlewares: ((ctx: SocketContext) => Promise<void>)[] = [];
   private config: ServerConfig;
   private logger: Logger;
   public database: DatabaseInterface;
@@ -18,7 +20,7 @@ export class SocketServer {
     this.logger = new Logger(this.config.name);
   }
 
-  use(middleware: (ctx: WebSocketContext, next: () => Promise<void>) => Promise<void>) {
+  use(middleware: (ctx: Context) => any) {
     this.middlewares.push(middleware);
   }
 
@@ -33,17 +35,19 @@ export class SocketServer {
   handleConnection(socket: WebSocket) {
     socket.on('message', async (raw: string) => {
       const message: Message = JSON.parse(raw);
-      const ctx: WebSocketContext = {
+      const ctx: SocketContext = {
         socket,
         message,
+        session: {},
         getParams: () => message.params,
         getBody: () => message.body,
         getHeaders: () => socket.headers,
         getHeader: (key: string) => socket.headers[key],
-        error: (err) => socket.send({ error: err.message || 'Error' }),
-        send: (data) => socket.send(parseResponse(this.config.format, data)),
+        error: async (err) => socket.send({ error: err.message || 'Error' }),
+        send: async (data) => socket.send(parseResponse(this.config.format, data)),
         status: function() { return this },
         getInfo: () => ({
+          session: ctx.session,
           database: this.config.database,
           server: this.config.name,
           url: socket.url,
@@ -62,7 +66,7 @@ export class SocketServer {
           return ctx.error(new Error('Route not found'));
 
         for (const mw of this.middlewares)
-          await mw(ctx, () => Promise.resolve());
+          await Promise.resolve().then(() => mw(ctx));
 
         return route(ctx);
       } catch (error) {
@@ -94,9 +98,8 @@ const wsServer = new SocketServer({
 });
 
 // Middleware global
-wsServer.use(async (ctx, next) => {
+wsServer.use(async (ctx) => {
   log(`Message received: ${ctx.message}`);
-  await next();
 });
 
 // Registrando rotas WebSocket

@@ -20,6 +20,7 @@ export interface AuthStrategies {
   jwt?: {
     secret: string;
     expiresIn: string;
+    refreshExpiresIn: string;
     entity: {
       name: string;
       identifiers: string[];

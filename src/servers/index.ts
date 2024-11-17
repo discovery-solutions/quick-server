@@ -1,13 +1,16 @@
-import { SocketServer } from './socket';
-import { HTTPServer } from './http';
+import { SocketServer, SocketContext } from './socket';
+import { HTTPServer, HTTPContext } from './http';
 import { Config } from '../types';
 import { Logger } from '../utils/logger';
 import { Auth } from '../features/auth';
 import { CRUD } from '../features/crud';
+import { Authentication } from '../features/auth/authentication';
+import { Authorization } from '../features/auth/authorization';
 
 const logger = new Logger();
 
 export * from './types';
+export { SocketServer, HTTPServer, SocketContext, HTTPContext };
 
 export class Server {
   private static instance: Server | null = null;
@@ -47,9 +50,12 @@ export class Server {
 
     logger.log('Starting servers...');
     Server.instance.servers.forEach((server, key) => {
-      server.apply(Auth.middleware);
-      server.apply(CRUD.middleware);
       server.use(Logger.middleware);
+      server.use(Authentication.middleware);
+      server.use(Authorization.middleware);
+      
+      server.apply(Authentication.routes);
+      server.apply(CRUD.middleware);
 
       if (server) server.start();
     });

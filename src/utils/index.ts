@@ -12,3 +12,16 @@ export function capitalize(string) {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function isPromise(promise) {  
+  return !!promise && typeof promise.then === 'function';
+}
+
+export function promisify(promise: any): Promise<any> {
+  if (isPromise(promise)) return promise;
+  return new Promise(resolve => resolve(promise));
+}

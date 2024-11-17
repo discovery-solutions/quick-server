@@ -1,6 +1,5 @@
+import { HTTPServer, SocketServer } from "../../servers";
 import { ControllerCRUD } from "./controller";
-import { SocketServer } from "../../servers/socket";
-import { HTTPServer } from "../../servers/http";
 import { EntityManager } from "../entity";
 
 export class CRUD {

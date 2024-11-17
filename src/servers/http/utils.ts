@@ -53,7 +53,7 @@ function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promi
   });
 }
 
-async function corsMiddleware(request: IncomingMessage, response: ServerResponse, next: () => Promise<any>) {
+async function corsMiddleware(request: IncomingMessage, response: ServerResponse) {
   const allowedOrigins = ['*'];
   const origin = request.headers.origin;
 
@@ -63,35 +63,13 @@ async function corsMiddleware(request: IncomingMessage, response: ServerResponse
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
-  if (request.method !== 'OPTIONS')
-    return next();
+  if (request.method !== 'OPTIONS') return;
     
   response.statusCode = 204;
   response.end();
 }
 
 export const NativeMiddlewares = { jsonParser, formParser, corsMiddleware };
-
-export function TimeoutMiddleware(timeout: number) {
-  return async (ctx, next) => {;
-    let timer: NodeJS.Timeout;
-
-    try {
-      await Promise.race([
-        new Promise((_, reject) => {
-          timer = setTimeout(() => {
-            reject(new Error(`Request timeout exceeded (${timeout}ms)`));
-          }, timeout);
-        }),
-        next(),
-      ]);
-    } catch (err) {
-      ctx.status(408).send({ error: err.message });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-};
 
 export function findRoute(pathname: string, method: string, routes: any): RouteHandler | undefined {
   for (const route of Object.keys(routes)) {

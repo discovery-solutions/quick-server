@@ -5,9 +5,9 @@ export interface Message {
   params: RequestParams;
   action: string;
 }
-export interface WebSocketContext extends Context {
+export interface SocketContext extends Context {
   socket: WebSocket;
   message: Message;
 }
 
-export type WebSocketHandler = (ctx: WebSocketContext) => void;
+export type WebSocketHandler = (ctx: SocketContext) => void;

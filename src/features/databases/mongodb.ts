@@ -18,16 +18,36 @@ export class MongoDB implements DatabaseInterface {
       query._id = new ObjectId(String(query.id));
       delete query.id;
     }
-
     return query;
   }
 
-  async insert<T>(table: string, data: T): Promise<ObjectId> {
+  private addTimestamps(data: Record<string, any>) {
+    const now = new Date();
+    return {
+      ...data,
+      createdAt: data.createdAt || now,
+      updatedAt: now,
+      deletedAt: undefined,
+    };
+  }
+  
+  private transformResult<T>(result: T[]): T[] {
+    return result.map((data: any) => {
+      if (data._id) {
+        data['id'] = data._id.toString();
+        delete data._id;
+      }
+      
+      return data;
+    });
+  }
+
+  async insert<T>(table: string, data: T): Promise<string> {
     this.logger.log(`Inserting a record into table "${table}"...`);
     const collection: Collection = this.db.collection(table);
-    const res = await collection.insertOne(data);
+    const res = await collection.insertOne(this.addTimestamps(data));
     this.logger.log(`Record inserted into table "${table}".`);
-    return res.insertedId;
+    return res.insertedId.toString();
   }
 
   async get<T>(table: string, query: Record<string, any>): Promise<T[]> {
@@ -35,13 +55,13 @@ export class MongoDB implements DatabaseInterface {
     const collection: Collection = this.db.collection(table);
     const result = await collection.find(this.parseQuery(query)).toArray();
     this.logger.log(`Fetched ${result.length} record(s) from table "${table}".`);
-    return result as T[];
+    return this.transformResult(result) as T[];
   }
 
   async update<T>(table: string, query: Record<string, any>, data: T): Promise<void> {
     this.logger.log(`Updating records in table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
-    const result = await collection.updateOne(this.parseQuery(query), { $set: data });
+    const result = await collection.updateOne(this.parseQuery(query), { $set: this.addTimestamps(data) });
     this.logger.log(`Matched ${result.matchedCount} record(s) and modified ${result.modifiedCount} record(s) in table "${table}".`);
   }
 
@@ -55,7 +75,8 @@ export class MongoDB implements DatabaseInterface {
   async bulkInsert<T>(table: string, data: T[]): Promise<void> {
     this.logger.log(`Performing bulk insert into table "${table}" with ${data.length} record(s).`);
     const collection: Collection = this.db.collection(table);
-    const result = await collection.insertMany(data);
+    const dataWithTimestamps = data.map(item => this.addTimestamps(item));
+    const result = await collection.insertMany(dataWithTimestamps);
     this.logger.log(`Bulk insert completed. Inserted ${result.insertedCount} record(s) into table "${table}".`);
   }
 
@@ -65,9 +86,9 @@ export class MongoDB implements DatabaseInterface {
     const bulkOps = data.map(item => ({
       updateOne: {
         filter: { _id: item['_id'] },
-        update: { $set: item },
+        update: { $set: this.addTimestamps(item) },
         upsert: true,
-      }
+      },
     }));
     const result = await collection.bulkWrite(bulkOps);
     this.logger.log(`Bulk update completed. Matched ${result.matchedCount} and modified ${result.modifiedCount} record(s) in table "${table}".`);

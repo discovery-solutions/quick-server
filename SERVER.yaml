@@ -74,6 +74,10 @@ auth:
         "*": 
           get: true
           list: true
+        user:
+          insert: true
+          update: true
+          delete: true
         post: 
           insert: true
           update: true
@@ -94,7 +98,7 @@ databases:
     key: "mongodb"
     uri: "{MONGODB_URI}"
     name: "quick-server"
-    # logs: true
+    logs: true
 
 entities:
   - name: "user"
@@ -134,3 +138,10 @@ entities:
       type: "oauth"
       oauth:
         strategy: "google"
+
+  - name: "post"
+    alias: "Post"
+    fields:
+      title: "string"
+      date: "date"
+      content: "string"

@@ -1,12 +1,13 @@
 import { findRoute, NativeMiddlewares } from './utils';
 import { Database, DatabaseInterface } from '../../features/databases';
 import { HTTPContext, RouteHandler } from './types';
+import { Context, RequestParams } from '../types';
 import { parseResponse } from '../utils';
-import { RequestParams } from '../types';
 import { ServerConfig } from '../../types';
 import { createServer } from 'http';
 import { Logger } from '../../utils/logger';
 import { parse } from 'url';
+import { promisify, sleep } from '../../utils';
 
 const logger = new Logger('http-server');
 const ContentTypes = {
@@ -16,9 +17,11 @@ const ContentTypes = {
   xml: 'application/xml',
   csv: 'text/csv',
 };
+
+export { HTTPContext };
 export class HTTPServer {
   private routes: { [key: string]: { [method: string]: RouteHandler } } = {};
-  private middlewares: ((ctx: HTTPContext, next: () => Promise<any>) => Promise<any>)[] = [];
+  private middlewares: ((ctx: HTTPContext) => Promise<any>)[] = [];
   private config: ServerConfig;
   private basePath: string;
   public database: DatabaseInterface;
@@ -32,7 +35,7 @@ export class HTTPServer {
     return callback(this);
   }
 
-  use(middleware: (ctx: HTTPContext, next: () => Promise<any>) => Promise<any>) {
+  use(middleware: (ctx: Context) => any) {
     this.middlewares.push(middleware);
   }
 
@@ -88,11 +91,13 @@ export class HTTPServer {
       request: req,
       response: res,
       params: params,
+      session: {},
       getParams: () => params,
       getBody: () => req.body,
       getHeaders: () => req.headers,
       getHeader: (key: string) => req.headers[key],
       getInfo: () => ({
+        session: ctx.session,
         database: this.config.database,
         server: this.config.name,
         method: req.method,
@@ -106,7 +111,7 @@ export class HTTPServer {
         res.statusCode = code;
         return this;
       },
-      send: (data: any) => {
+      send: async (data: any) => {
         if (typeof data === 'undefined')
           throw new Error('ctx.send(data): data cannot be undefined');
 
@@ -116,39 +121,60 @@ export class HTTPServer {
         logger.info(`Response for Incoming Request ${req.url}`, { payload });
         return res.end(payload);
       },
-      error: (error) => {
+      error: async (error) => {
         const { message, ...rest } = (error || {});
         logger.error(`Error for Incoming Request ${req.url}`);
         logger.error(error);
 
-        if (res.statusCode >= 200 || res.statusCode < 300) res.statusCode = 500;
-        res.end(JSON.stringify({ message: message || 'Internal Server Error', ...rest }));
+        if (res.statusCode >= 200 && res.statusCode < 300) res.statusCode = 500;
+        return res.end(JSON.stringify({ message: message || 'Internal Server Error', ...rest }));
       },
     };
 
-    let timer: NodeJS.Timeout;
-
-    timer = setTimeout(() => {
-      ctx.status(408).error(new Error(`Request timeout exceeded (${this.config.request.timeout}ms)`));
-    }, this.config.request.timeout);
-
-    await (async () => {
-      try {
-        const route = findRoute(pathname, method, this.routes)
+    const timeoutPromise = new Promise(async (resolve, reject) => {
+      await sleep(this.config.request.timeout);
       
-        for (const mw of this.middlewares)
-          await mw(ctx, () => Promise.resolve());
-  
+      if (res.writableEnded) resolve(false);
+      
+      reject(
+        new Error(`Request timeout exceeded (${this.config.request.timeout}ms)`)
+      );
+    });
+
+    const routePromise = new Promise(async (resolve, reject) => {
+      try {
+        const route = findRoute(pathname, method, this.routes);
+        
+        for (const mw of this.middlewares) {
+          if (res.writableEnded)
+            return resolve(false);
+
+          await promisify(mw(ctx));
+        }
+    
         if (!route)
-          throw new Error('Not Found');
-  
-        await Promise.resolve(route(ctx));
+          return reject(new Error('Not Found'));
+    
+        if (res.writableEnded)
+          return resolve(false);
+    
+        await promisify(route(ctx));
       } catch (error) {
-        ctx.error(error);
-      } finally {
-        return clearTimeout(timer);
+        if (res.writableEnded)
+          return resolve(false);
+
+        return reject(error);
       }
-    })();
+    });
+    
+    try {
+      await Promise.race([timeoutPromise, routePromise]);
+    } catch (error) {
+      if (error.message && error.message.startsWith('Request timeout exceeded'))
+        return ctx.status(408).error(error);
+      
+      return ctx.error(error);
+    }
   }
 
   extractParams(pathname: string): RequestParams {
@@ -180,7 +206,7 @@ export class HTTPServer {
   start() {
     const server = createServer(async (req, res) => {
       for (const key in NativeMiddlewares)
-        await NativeMiddlewares[key](req, res, () => Promise.resolve());
+        await NativeMiddlewares[key](req, res);
       
       return this.handleRequest(req as any, res);
     });
@@ -205,9 +231,8 @@ const server = new HTTPServer({
 });
 
 // Middleware global
-server.use(async (ctx, next) => {
+server.use(async (ctx) => {
   log(`Request made to ${ctx.request.url}`);
-  await next();
 });
 
 // Agrupando rotas

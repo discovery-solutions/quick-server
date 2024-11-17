@@ -1,25 +1,12 @@
-import { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'http';
 
-export type RequestParams = { [key: string]: string | string[] | undefined };
+import { IncomingMessage, ServerResponse } from 'http';
+import { Context } from '../types';
 
-export interface HTTPContext {
+export interface HTTPContext extends Context {
   request: IncomingMessage & {
     body: any;
   };
   response: ServerResponse;
-  getInfo: () => {
-    method?: string;
-    url: string;
-    headers: IncomingHttpHeaders;
-    params: Record<string, any>;
-    timestamp: string;
-  };
-  getParams: () => RequestParams;
-  getBody: () => any;
-  params?: RequestParams;
-  error: (err: Error) => any;
-  send: (data: any) => any;
-  status: (code: number) => any;
 }
 
 export type RouteHandler = (ctx: HTTPContext) => any;

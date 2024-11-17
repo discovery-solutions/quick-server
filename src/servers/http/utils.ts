@@ -120,30 +120,3 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
 
   return undefined;
 }
-
-export async function executeWithTimeout(ctx: HTTPContext, timeout: number, functionToExecute: Function) {
-  let timer: NodeJS.Timeout;
-
-  // const timeoutPromise = new Promise((_, reject) => {
-  //   console.log('iniciando timer: ' + timeout);
-    
-  //   timer = setTimeout(() => {
-  //     console.log('deu timeout')
-  //     // reject(new Error(`Request timeout exceeded (${timeout}ms)`));
-  //   }, 1000);
-  // });
-
-  try {
-    timer = setTimeout(() => {
-      console.log('deu timeout')
-      new Error(`Request timeout exceeded (${timeout}ms)`);
-    }, timeout);
-
-    return functionToExecute();
-    // await Promise.race([ timeoutPromise, functionToExecute() ]);
-  } catch (err) {
-    ctx.status(408).send({ error: err.message });
-  } finally {
-    clearTimeout(timer);
-  }
-}

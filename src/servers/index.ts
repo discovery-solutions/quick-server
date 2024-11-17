@@ -5,6 +5,8 @@ import { Logger } from '../utils/logger';
 
 const logger = new Logger();
 
+export * from './types';
+
 export class Server {
   private static instance: Server | null = null;
   private servers: Map<string, HTTPServer | SocketServer> = new Map();

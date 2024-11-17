@@ -1,8 +1,9 @@
-import { HTTPContext, RequestParams, RouteHandler } from './types';
+import { findRoute, NativeMiddlewares } from './utils';
 import { Database, DatabaseInterface } from '../../features/databases';
+import { HTTPContext, RouteHandler } from './types';
 import { CRUDMiddlewareHTTP } from '../../features/crud';
-import { executeWithTimeout, findRoute, NativeMiddlewares } from './utils';
 import { parseResponse } from '../utils';
+import { RequestParams } from '../types';
 import { ServerConfig } from '../../types';
 import { createServer } from 'http';
 import { Logger } from '../../utils/logger';
@@ -16,7 +17,6 @@ const ContentTypes = {
   xml: 'application/xml',
   csv: 'text/csv',
 };
-
 export class HTTPServer {
   private routes: { [key: string]: { [method: string]: RouteHandler } } = {};
   private middlewares: ((ctx: HTTPContext, next: () => Promise<any>) => Promise<any>)[] = [];
@@ -125,7 +125,7 @@ export class HTTPServer {
 
     timer = setTimeout(() => {
       ctx.status(408).error(new Error(`Request timeout exceeded (${this.config.request.timeout}ms)`));
-    }, 1000 * 2);
+    }, this.config.request.timeout);
 
     await (async () => {
       try {

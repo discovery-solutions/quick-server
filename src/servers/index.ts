@@ -2,10 +2,10 @@ import { SocketServer, SocketContext } from './socket';
 import { HTTPServer, HTTPContext } from './http';
 import { Config } from '../types';
 import { Logger } from '../utils/logger';
-import { Auth } from '../features/auth';
 import { CRUD } from '../features/crud';
 import { Authentication } from '../features/auth/authentication';
 import { Authorization } from '../features/auth/authorization';
+import { Context, Middleware } from './types';
 
 const logger = new Logger();
 
@@ -44,7 +44,7 @@ export class Server {
     return Server.instance.servers.get(name);
   }
 
-  public static start() {
+  public static start(middlewares?: Middleware[]) {
     if (!Server.instance)
       throw new Error('Server not initialized. Call Server.initialize(servers) first.');
 
@@ -53,7 +53,11 @@ export class Server {
       server.use(Logger.middleware);
       server.use(Authentication.middleware);
       server.use(Authorization.middleware);
-      
+
+      if (middlewares)
+        for (const middleware of middlewares)
+          server.use(middleware);
+
       server.apply(Authentication.routes);
       server.apply(CRUD.middleware);
 

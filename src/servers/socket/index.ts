@@ -2,8 +2,8 @@ import type { Message, SocketContext, WebSocketHandler } from './types';
 import { Database, DatabaseInterface } from '../../features/databases';
 import type { ServerConfig } from '../../types';
 import { parseResponse } from '../utils';
+import { Middleware } from '../types';
 import * as WebSocket from 'ws';
-import { Context } from '../types';
 import { Logger } from '../../utils/logger';
 
 export { SocketContext };
@@ -20,7 +20,7 @@ export class SocketServer {
     this.logger = new Logger(this.config.name);
   }
 
-  use(middleware: (ctx: Context) => any) {
+  use(middleware: Middleware) {
     this.middlewares.push(middleware);
   }
 

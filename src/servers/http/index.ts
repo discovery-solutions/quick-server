@@ -1,7 +1,7 @@
 import { findRoute, NativeMiddlewares } from './utils';
 import { Database, DatabaseInterface } from '../../features/databases';
 import { HTTPContext, RouteHandler } from './types';
-import { Context, RequestParams } from '../types';
+import { Middleware, RequestParams } from '../types';
 import { parseResponse } from '../utils';
 import { ServerConfig } from '../../types';
 import { createServer } from 'http';
@@ -35,7 +35,7 @@ export class HTTPServer {
     return callback(this);
   }
 
-  use(middleware: (ctx: Context) => any) {
+  use(middleware: Middleware) {
     this.middlewares.push(middleware);
   }
 

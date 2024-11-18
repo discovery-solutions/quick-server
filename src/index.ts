@@ -1,9 +1,9 @@
+import { Middleware, Server } from './servers';
 import { EntityManager } from './features/entity';
 import { Database } from './features/databases';
 import { loadYaml } from './utils/file';
 import { extract } from './utils/config';
 import { Logger } from './utils/logger';
-import { Server } from './servers';
 import { Config } from './types';
 import { Auth } from './features/auth';
 import path from 'path';
@@ -14,6 +14,7 @@ export * from './types';
 
 export class QuickServer {
   private config: Config;
+  private middlewares: Middleware[] = [];
   
   constructor(filePath = path.join(process.cwd(), 'SERVER.yaml')) {
     this.config = extract(loadYaml(filePath));
@@ -30,10 +31,18 @@ export class QuickServer {
     Auth.initialize(this.config.auth);
   }
 
+  use(middleware: Middleware) {
+    this.middlewares.push(middleware);
+  }
+
   async start() {
     logger.log('Initializing Entities...');
     EntityManager.initialize(this.config.entities);
     
-    Server.start();
+    Server.start(this.middlewares);
+  }
+
+  get(name: string) {
+    return Server.get(name);
   }
 }

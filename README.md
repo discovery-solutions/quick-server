@@ -129,6 +129,12 @@ Once installed, configure your server using a YAML file (as shown above). Run th
 import { QuickServer } from "@discovery-solutions/quick-server";
 
 const server = new QuickServer();
+
+server.use((ctx) => {
+  console.log('hello there');
+  return ctx.status(500).error(new Error('testing'))
+});
+
 server.start();
 ```
 
@@ -154,16 +160,16 @@ This will start both the WebSocket and REST servers based on the configuration.
   - [x] MongoDB  
   - [x] MySQL
   - [x] SQLite
-- [ ] **Authentication**  
+- [x] **Authentication**  
   - [x] JWT  
   - [x] Authentication Routes  
-  - [ ] Authorization Handler
+  - [x] Authorization Handler
 - [x] **Developer**  
   - [x] Add Custom Logger with Metadata
   - [x] Add Request and API Transaction Logger
   - [x] Support to ENV variables
-- [ ] **Interceptors**  
-  - [ ] Add Custom Request Handlers
+- [x] **Interceptors**  
+  - [x] Add Custom Request Handlers
 - [ ] **Full Search**  
   - [ ] Search for All Entities
 - [ ] **Documentation**  

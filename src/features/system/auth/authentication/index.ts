@@ -1,10 +1,10 @@
-import { HTTPServer, SocketServer } from "../../../servers";
-import { OAuthStrategy } from "../../../types";
-import { Database } from '../../databases';
-import { fetcher } from '../../../utils/fetcher';
-import { Context } from '../../../servers';
+import { HTTPServer, SocketServer } from "../../../../servers";
+import { OAuthStrategy } from "../../../../types";
+import { Database } from '../../../databases';
+import { fetcher } from '../../../../utils/fetcher';
+import { Context } from '../../../../servers';
 import { JWTAuth } from "./jwt";
-import { Logger } from '../../../utils/logger';
+import { Logger } from '../../../../utils/logger';
 import { OAuth } from "./oauth";
 import { Auth } from "..";
 import jwt from 'jsonwebtoken';

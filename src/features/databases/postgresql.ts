@@ -97,4 +97,45 @@ export class PostgresDb implements DatabaseInterface {
     );
     this.logger.log(`Bulk delete completed from table "${table}".`);
   }
+
+  async search<T>(query: string): Promise<Record<string, T[]>> {
+    this.logger.log(`Starting global search with query: ${query}`);
+
+    const tablesResult = await this.pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+
+    const tables = tablesResult.rows.map(row => row.table_name);
+    const results: Record<string, T[]> = {};
+    
+    for (const table of tables) {
+      const columnsResult = await this.pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+      `, [table]);
+
+      const columns = columnsResult.rows.map(row => row.column_name);
+
+      const whereClause = columns
+        .map((column, index) => `${column} ILIKE $${index + 1}`)
+        .join(' OR ');
+
+      if (whereClause) {
+        const values = columns.map(() => `%${query}%`);
+        const queryText = `SELECT * FROM ${table} WHERE ${whereClause}`;
+
+        const result = await this.pool.query(queryText, values);
+
+        if (result.rows.length > 0)
+          results[table] = result.rows as T[];
+      }
+    }
+
+    this.logger.log(`Global search completed. Found ${results.length} table(s) with matches.`);
+    return results;
+  }
+
 }

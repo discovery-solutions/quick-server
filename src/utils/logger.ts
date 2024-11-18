@@ -25,6 +25,7 @@ export class Logger {
   }
 
   private parse(data: any) {
+    if (Object.keys(data).length === 0) return '';
     return JSON.stringify(data, null, config?.formatted ? 2 : 0);
   }
 
@@ -51,10 +52,8 @@ export class Logger {
       }
     })();
 
-    if (Object.keys(data).length === 0 || raw instanceof Error)
-      return console.log(`${prefix}:`, message || raw);
-
-    const breakLine = config?.formatted ? '\n' : ' ';
+    const hasData = Object.keys(data).length > 0;
+    const breakLine = config?.formatted && hasData ? '\n' : ' ';
     console.log(`${prefix}: ${[message, breakLine, this.parse(data)].join('')}`);
   }
 

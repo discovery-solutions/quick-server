@@ -91,4 +91,53 @@ export class MySqlDB implements DatabaseInterface {
     );
     this.logger.log(`Bulk delete completed. Result: ${JSON.stringify(result)}`);
   }
+
+  async search<T>(query: string): Promise<Record<string, T[]>> {
+    this.logger.log(`Performing global search for term: "${query}" across all tables.`);
+  
+    const [tables]: any = await this.connection.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE()
+    `);
+  
+    const results: Record<string, T[]> = {};
+    const lowerCasedTerm = `%${query.toLowerCase()}%`;
+  
+    for (const tableInfo of tables) {
+      const tableName = tableInfo.TABLE_NAME;
+      this.logger.log(`Searching in table: "${tableName}"`);
+  
+      const [columns]: any = await this.connection.query(`
+        SELECT COLUMN_NAME 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() AND table_name = ?
+      `, [tableName]);
+  
+      const textColumns = columns.map((col: any) => col.COLUMN_NAME);
+  
+      if (textColumns.length > 0) {
+        const whereClause = textColumns
+          .map(column => `LOWER(${column}) LIKE ?`)
+          .join(' OR ');
+  
+        const [rows]: any = await this.connection.query(
+          `SELECT * FROM ${tableName} WHERE ${whereClause}`,
+          Array(textColumns.length).fill(lowerCasedTerm)
+        );
+  
+        if (rows.length > 0) {
+          results[tableName] = rows.map((row: any) => {
+            if (row.id)
+              row.id = row.id.toString();
+
+            return row as T;
+          });
+        }
+      }
+    }
+  
+    this.logger.log(`Global search completed. Found results in ${Object.keys(results).length} table(s).`);
+    return results;
+  }  
 }

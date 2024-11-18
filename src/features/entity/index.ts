@@ -29,7 +29,7 @@ export class EntityManager {
 
     if (entity) return entity;
 
-    const { alias } = EntityManager.raw.find(e => e.alias === identifier);
+    const { alias } = EntityManager.raw.find(e => e.alias === identifier) || {};
 
     return EntityManager.instance.entities.get(alias);
   }

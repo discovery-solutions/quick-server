@@ -1,8 +1,8 @@
-import { AuthStrategies } from '../../../types';
-import { Database } from '../../databases';
-import { Context } from '../../../servers';
+import { AuthStrategies } from '../../../../types';
+import { Database } from '../../../databases';
+import { Context } from '../../../../servers';
 import * as Utils from './utils'
-import { Auth } from '../';
+import { Auth } from '..';
 
 export class JWTAuth {
   // POST /system/auth

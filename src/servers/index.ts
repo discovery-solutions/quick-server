@@ -1,11 +1,12 @@
 import { SocketServer, SocketContext } from './socket';
 import { HTTPServer, HTTPContext } from './http';
+import { Authentication } from '../features/system/auth/authentication';
+import { Authorization } from '../features/system/auth/authorization';
+import { Middleware } from './types';
+import { Search } from '../features/system/search';
 import { Config } from '../types';
 import { Logger } from '../utils/logger';
 import { CRUD } from '../features/crud';
-import { Authentication } from '../features/auth/authentication';
-import { Authorization } from '../features/auth/authorization';
-import { Context, Middleware } from './types';
 
 const logger = new Logger();
 
@@ -60,6 +61,7 @@ export class Server {
 
       server.apply(Authentication.routes);
       server.apply(CRUD.middleware);
+      server.apply(Search.routes);
 
       if (server) server.start();
     });

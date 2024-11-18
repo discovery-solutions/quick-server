@@ -110,4 +110,36 @@ export class InMemoryDB implements DatabaseInterface {
 
     this.logger.log(`Bulk delete completed. Deleted ${data.length} record(s) from table "${table}".`);
   }
+
+  async search<T>(query: string): Promise<Record<string, T[]>> {
+    this.logger.log(`Performing global search for term: "${query}"`);
+    
+    const lowerCasedTerm = query.toLowerCase();
+    const results: Record<string, T[]> = {};
+  
+    for (const table in this.db) {
+      const tableData = this.db[table];
+      const matches = tableData.filter(item => {
+        return Object.values(item).some(value => {
+          if (typeof value === 'string' || typeof value === 'number') {
+            return value.toString().toLowerCase().includes(lowerCasedTerm);
+          }
+          return false;
+        });
+      });
+  
+      if (matches.length > 0) {
+        results[table] = matches.map(item => {
+          if (item._id) {
+            item.id = item._id.toString();
+            delete item._id;
+          }
+          return item as T;
+        });
+      }
+    }
+  
+    this.logger.log(`Global search completed. Found results in ${Object.keys(results).length} table(s).`);
+    return results;
+  }  
 }

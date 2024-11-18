@@ -1,6 +1,6 @@
 import { Auth } from '..';
-import { SocketServer, HTTPServer, Context } from '../../../servers';
-import { EntityManager } from '../../entity';
+import { SocketServer, HTTPServer, Context } from '../../../../servers';
+import { EntityManager } from '../../../entity';
 
 const WHITELIST = ['system', 'auth'];
 const METHODS_TO_ACTIONS = {

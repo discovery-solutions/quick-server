@@ -1,7 +1,7 @@
-import { OAuthStrategy } from '../../../types';
-import { Database } from '../../databases';
-import { Context } from '../../../servers';
-import { fetcher } from '../../../utils/fetcher';
+import { OAuthStrategy } from '../../../../types';
+import { Database } from '../../../databases';
+import { Context } from '../../../../servers';
+import { fetcher } from '../../../../utils/fetcher';
 import * as Utils from './utils';
 import { Auth } from '..';
 

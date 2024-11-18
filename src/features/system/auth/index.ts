@@ -1,4 +1,4 @@
-import { AuthConfig, OAuthStrategy } from '../../types';
+import { AuthConfig, OAuthStrategy } from '../../../types';
 
 export class Auth {
   private static instance: Auth | null = null;

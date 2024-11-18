@@ -1,6 +1,7 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import { DatabaseInterface } from './types';
 import { Logger } from '../../utils/logger';
+import { EntityManager } from '../entity';
 
 export class MongoDB implements DatabaseInterface {
   private db: Db;
@@ -40,6 +41,28 @@ export class MongoDB implements DatabaseInterface {
       
       return data;
     });
+  }
+
+  private async createTextIndexIfNotExists(table: string, fields: string[]): Promise<void> {
+    this.logger.log(`Checking existing indexes for collection "${table}" before creating text index.`);
+    const collection: Collection = this.db.collection(table);
+  
+    const existingIndexes = await collection.listIndexes().toArray();
+    const indexSpec = fields.reduce((acc, field) => {
+      acc[field] = "text";
+      return acc;
+    }, {});
+  
+    const isIndexExists = existingIndexes.some((index) =>
+      JSON.stringify(index.key) === JSON.stringify(indexSpec)
+    );
+  
+    if (!isIndexExists) {
+      await collection.createIndex(indexSpec);
+      this.logger.log(`Text index created for collection "${table}".`);
+    } else {
+      this.logger.log(`Text index already exists for collection "${table}". Skipping creation.`);
+    }
   }
 
   async insert<T>(table: string, data: T): Promise<string> {
@@ -100,5 +123,38 @@ export class MongoDB implements DatabaseInterface {
     const ids = data.map(item => item['_id']);
     const result = await collection.deleteMany({ _id: { $in: ids } });
     this.logger.log(`Bulk delete completed. Deleted ${result.deletedCount} record(s) from table "${table}".`);
+  }
+
+  async search<T>(query: string): Promise<Record<string, T[]>> {
+    this.logger.log(`Performing global search for term: "${query}" across all collections.`);
+    
+    const collections = await this.db.listCollections().toArray();
+    const results: Record<string, T[]> = {};
+
+    for (const { name } of collections) {
+      const entity = EntityManager.get(name);
+      this.logger.log(`Searching in collection: "${name}"`);
+
+      if (!entity) continue;
+
+      const fields = Object.keys(entity.fields).filter(key => entity.fields[key].type === 'string');
+      await this.createTextIndexIfNotExists(name, fields);
+
+      const collection: Collection = this.db.collection(name);
+      const result = await collection.find({ $text: { $search: query } }).toArray();
+
+      if (result.length > 0) {
+        results[name] = result.map(item => {
+          if (item._id) {
+            item.id = item._id.toString();
+            delete item._id;
+          }
+          return item as T;
+        });
+      }
+    }
+
+    this.logger.log(`Global search completed. Found results in ${Object.keys(results).length} collection(s).`);
+    return results;
   }
 }

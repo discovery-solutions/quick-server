@@ -8,4 +8,5 @@ export interface DatabaseInterface {
   bulkInsert<T>(table: string, data: T[]): Promise<void>;
   bulkUpdate<T>(table: string, data: T[]): Promise<void>;
   bulkDelete<T>(table: string, data: T[]): Promise<void>;
+  search<T>(query: string): Promise<Record<string, T[]>>;
 }

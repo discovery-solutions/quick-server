@@ -5,7 +5,7 @@ import { loadYaml } from './utils/file';
 import { extract } from './utils/config';
 import { Logger } from './utils/logger';
 import { Config } from './types';
-import { Auth } from './features/auth';
+import { Auth } from './features/system/auth';
 import path from 'path';
 
 const logger = new Logger();

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { DatabaseInterface } from '../../databases';
+import { DatabaseInterface } from '../../../databases';
 
 const DEFAULT_REFRESH_EXPIRES_IN = 60 * 60; // 1 hour
 const DEFAULT_EXPIRES_IN = 60 * 30;         // 30 minutes

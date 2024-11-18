@@ -153,4 +153,43 @@ export class SqliteDB implements DatabaseInterface {
       throw err;
     }
   }
+
+  async search<T>(query: string): Promise<Record<string, T[]>> {
+    const tables = await this.getTables();
+    
+    const searchResults: Record<string, T[]> = {};
+    
+    for (const table of tables) {
+      const columns = await this.getColumns(table);
+      const conditions = columns.map(col => `${col} LIKE ?`).join(' OR ');
+      const values = columns.map(() => `%${query}%`);
+
+      const sql = `SELECT * FROM ${table} WHERE ${conditions}`;
+      const rows: T[] = await this.allQuery(sql, values);
+      
+      if (rows.length > 0)
+        searchResults[table] = rows;
+    }
+
+    return searchResults;
+  }
+
+  private getTables(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, rows: any) => {
+        if (err) reject(err);
+        else resolve(rows.map(row => row.name));
+      });
+    });
+  }
+  
+  private getColumns(table: string): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all(`PRAGMA table_info(${table})`, (err, rows: any) => {
+        if (err) reject(err);
+        else resolve(rows.map(row => row.name));
+      });
+    });
+  }
+
 }

@@ -144,7 +144,6 @@ export class HTTPServer {
     const routePromise = new Promise(async (resolve, reject) => {
       try {
         const route = findRoute(pathname, method, this.routes);
-        console.log(pathname, method, this.routes)
         
         for (const mw of this.middlewares) {
           if (res.writableEnded)

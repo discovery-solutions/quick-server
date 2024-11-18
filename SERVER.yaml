@@ -3,8 +3,6 @@ developer:
   logger:
     formatted: true
     verbose: false
-  # mock: true                # Para testes locais
-  # bypassAuthForLocal: true  # Desativa auth em ambiente local para testes
 
 servers:
   - name: "Rest-Server"

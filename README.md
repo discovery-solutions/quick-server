@@ -1,15 +1,16 @@
 # Quick Server
 
 ## Overview
-Quick Server is a fast, easy-to-use framework for building real-time WebSocket and RESTful applications. It is designed for rapid development with minimal setup, leveraging JSON/YAML configuration for server setup and entity definition.
 
-With built-in CRUD routes, authentication, file upload support, and database integration, Quick Server streamlines the process of creating robust web applications.
+**Quick Server** is a fast, easy-to-use framework for building real-time WebSocket and RESTful applications. It supports rapid development with minimal setup, leveraging JSON/YAML configuration for server setup, entity definition, and permission management.
+
+With built-in CRUD routes, authentication strategies, file upload support, and flexible database integration, **Quick Server** simplifies the creation of powerful web applications.
 
 ## Features
-### Present Features:
-- **Real-time WebSocket Support**: WebSocket server with support for CSV-formatted messages.
-- **RESTful API**: JSON-based RESTful server with CRUD operations.
-- **CRUD Routes**: Automatic creation of routes for entities such as:
+
+### Present Features
+- **WebSocket & REST API**: Serve both WebSocket and RESTful JSON-based endpoints.
+- **Automatic CRUD Operations**:
   - Create
   - Read (List/Get)
   - Update
@@ -17,34 +18,45 @@ With built-in CRUD routes, authentication, file upload support, and database int
   - Bulk Insert
 - **Authentication**:
   - JWT-based authentication
-  - Token-based authentication
-  - Auth routes and authorization handler
+  - OAuth integration (Google, GitHub, and more)
+  - Role-based permissions
 - **Database Integrations**:
   - In-Memory DB
-  - MongoDB (additional options like MySQL, PostgreSQL supported)
-  - Bulk data operations
-- **File Uploads**: Support for file uploads within forms.
-- **Multi-Tenant Support**: Ability to run multiple servers (WebSocket, REST) for different entities with distinct configurations.
+  - MongoDB
+  - MySQL
+  - PostgreSQL
+  - SQLite
+- **Full-Text Search:** Search across all entities for the result you're looking for.
+- **Multi-Tenant Support**: Run multiple independent servers with unique configurations.
+- **Extensibility**: Custom middleware, interceptors, and entity permissions.
+- **Logging & Environment Support**:
+  - Configurable logging with metadata
+  - Support for `.env` variables
 
-### Future Features:
-- **Advanced Features**:
-  - Full Search Capabilities
-  - API Rate Limiting
-  - API Analytics
-  - Webhooks & Service Workers
-  - Multi-Language Support
-  - Email Service Integration
-  - File Streaming
-  - GraphQL Support
-  - Chat and Ecommerce Setup
-  - Blog Setup (Optional)
+### Future Features
+- File Uploads
+- GraphQL Integration
+- API Rate Limiting & Analytics
+- Webhooks & Service Workers
+- Multi-Language Support
+- Email Service Integration
+- Ecommerce and Blog Modules (Optional)
+
+## Installation
+
+Install the package using npm:
+
+```bash
+npm install github:discovery-solutions/quick-server
+```
 
 ## Configuration
 
-Quick Server allows configuration through a simple YAML file. Below is an example setup:
+Quick Server uses a **YAML configuration** file for easy setup. Below is an example:
 
 ```yaml
 developer:
+  env: ".env"
   logger:
     formatted: true
     verbose: false
@@ -54,30 +66,75 @@ servers:
     port: 3501
     type: "rest"
     format: "json"
-    database: "main"
+    database: "mongodb"
     request:
-      limit: 10
+      limit: 10         # Items per page
+      timeout: 10       # Request timeout (seconds)
   - name: "Socket-Server"
     port: 3500
     type: "socket"
-    format: "csv"
     database: "mongodb"
-    request:
-      limit: 1000
+
+auth:
+  strategies:
+    jwt:
+      secret: "super_secret_key"
+      expiresIn: "1h"
+      entity:
+        name: "user"
+        identifiers:
+          - "email"
+          - "password"
+    oauth:
+      google:
+        clientId: "google_oauth_client_id"
+        clientSecret: "google_oauth_client_secret"
+        authUrl: "https://accounts.google.com/o/oauth2/auth"
+        tokenUrl: "https://oauth2.googleapis.com/token"
+        refreshToken:
+          enabled: true
+          expiration: "7d"
+        entity:
+          name: "user"
+          identifier: "email"
+          mapper:
+            email: "email"
+            name: "name"
+            picture: "avatar"
+  permissions:
+    default:
+      get: false
+      list: false
+      insert: false
+      update: false
+      delete: false
+    entities:
+      user:
+        "*": 
+          get: true
+          list: true
+        user:
+          insert: true
+          update: true
+          delete: true
+        post: 
+          insert: true
+          update: true
+          delete: true
+      company:
+        "*": 
+          get: true
+          list: true
+          insert: false
+          update: false
+          delete: false
 
 databases:
-  - type: in-memory
-    key: "main"
-  # Example for MySQL or MongoDB:
-  # - type: "mongodb"
-  #   key: "mongodb"
-  #   uri: "mongodb+srv://..."
-  # - type: "mysql"
-  #   key: "main"
-  #   host: "localhost"
-  #   user: "root"
-  #   password: "password"
-  #   database: "my_database"
+  - type: mongodb
+    key: "mongodb"
+    uri: "{MONGODB_URI}"
+    name: "quick-server"
+    logs: true
 
 entities:
   - name: "user"
@@ -89,98 +146,68 @@ entities:
       email:
         type: "string"
         required: true
-      avatar: "file"
+      avatar:
+        type: "file"
       password:
         type: "string"
         required: true
         secure: true
     auth:
       type: "jwt"
-      fields: ["login", "password"]
-      permissions:
-        "*":
-          insert: false
-          update: false
-          delete: false
-          list: true
-          get: true
-        "post":
-          insert: true
-          update: true
-          delete: true
-          list: true
-          get: true
-```
-
-## Installation
-
-To use Quick Server, simply install it via npm:
-
-```bash
-npm install github:discovery-solutions/quick-server
+      jwt:
+        fields: ["email", "password"]
+  - name: "company"
+    alias: "Company"
+    fields:
+      name:
+        type: "string"
+        required: true
+      document:
+        type: "string"
+        required: true
+      phone: 
+        type: "string"
+      address: 
+        type: "string"
+    auth:
+      type: "oauth"
+      oauth:
+        strategy: "google"
+  - name: "post"
+    alias: "Post"
+    fields:
+      title: "string"
+      date: "date"
+      content: "string"
 ```
 
 ## Usage
 
-Once installed, configure your server using a YAML file (as shown above). Run the server by executing:
+After configuration, run your server using the following code:
 
 ```ts
-// server.js
 import { QuickServer } from "@discovery-solutions/quick-server";
 
 const server = new QuickServer();
 
 server.use((ctx) => {
-  console.log('hello there');
-  return ctx.status(500).error(new Error('testing'))
+  console.log('Custom middleware triggered');
+  return ctx.status(200).json({ message: 'Hello World' });
 });
 
 server.start();
 ```
 
-This will start both the WebSocket and REST servers based on the configuration.
+This will launch your WebSocket and REST servers based on the configuration.
 
 ## Roadmap
 
-### Present Features:
-
-### Future Features:
-- [x] **CRUD Routes**  
-  - [x] Insert  
-  - [x] List/Get  
-  - [x] Update  
-  - [x] Delete
-- [x] **Bulk Actions**  
-  - [x] Bulk Insert  
-  - [x] Bulk Update  
-  - [x] Bulk Delete
-- [x] **Databases**  
-  - [x] In-Memory DB  
-  - [x] PostgreSQL  
-  - [x] MongoDB  
-  - [x] MySQL
-  - [x] SQLite
-- [x] **Authentication**  
-  - [x] JWT  
-  - [x] Authentication Routes  
-  - [x] Authorization Handler
-- [x] **Developer**  
-  - [x] Add Custom Logger with Metadata
-  - [x] Add Request and API Transaction Logger
-  - [x] Support to ENV variables
-- [x] **Interceptors**  
-  - [x] Add Custom Request Handlers
-- [x] **Full Search**  
-  - [x] Search for All Entities
-- [ ] **Documentation**  
-  - [ ] Finish Documentation  
-  - [ ] Create Autogenerated Documentation for API Endpoints
-- [ ] **File Upload**
-- [ ] **Blog Setup (Optional)**
-- [ ] **Chat Setup (Optional)**
-- [ ] **Ecommerce Setup (Optional)**
-- [ ] **Email Service Integration**
-- [ ] **API Analytics**
-- [ ] **Service Workers**
-- [ ] **Webhooks**
-<!-- - [ ] **GraphQL Integration** -->
+- [x] JWT & OAuth Authentication
+- [x] Configurable Permissions
+- [x] CRUD Route Generation
+- [x] Bulk Data Operations
+- [x] Multi-Tenant Support
+- [ ] API Documentation Generator
+- [ ] Webhooks and Service Workers
+- [ ] GraphQL Support
+- [ ] API Analytics

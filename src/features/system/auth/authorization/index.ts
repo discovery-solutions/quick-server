@@ -21,21 +21,18 @@ export class Authorization {
 
     const entity = Array.from(entities).find((path) => url.includes(path)); 
     if (entity) {
-      const permissions = Auth.getPermission(entity);
-
-      const methodPermissions = permissions['*'] ?? {};
-      const specificPermissions = permissions[method.toLowerCase()] ?? {};
-
-      const isAuthorized = methodPermissions[method.toLowerCase()] || specificPermissions[method.toLowerCase()];
+      const defaultPermissions = Auth.getPermission('default');
+      const isAuthorized = defaultPermissions?.['*']?.[method.toLowerCase()] || defaultPermissions?.[entity]?.[method.toLowerCase()];
+      
       if (isAuthorized) return;
 
-      if (session) {
+      if (session.entity) {
         const permissions = Auth.getPermission(session.entity);
         const hasPermission = Object.keys(permissions).some((key) => {
           if (url.includes(key) || key === '*')
           return METHODS_TO_ACTIONS[method.toLowerCase()].some((action) => permissions[key][action])
         });
-
+        
         if (hasPermission) return;
       }
     }

@@ -80777,13 +80777,11 @@ class Authorization {
             return;
         const entity = Array.from(entities).find((path) => url.includes(path));
         if (entity) {
-            const permissions = __1.Auth.getPermission(entity);
-            const methodPermissions = (_a = permissions['*']) !== null && _a !== void 0 ? _a : {};
-            const specificPermissions = (_b = permissions[method.toLowerCase()]) !== null && _b !== void 0 ? _b : {};
-            const isAuthorized = methodPermissions[method.toLowerCase()] || specificPermissions[method.toLowerCase()];
+            const defaultPermissions = __1.Auth.getPermission('default');
+            const isAuthorized = ((_a = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions['*']) === null || _a === void 0 ? void 0 : _a[method.toLowerCase()]) || ((_b = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[entity]) === null || _b === void 0 ? void 0 : _b[method.toLowerCase()]);
             if (isAuthorized)
                 return;
-            if (session) {
+            if (session.entity) {
                 const permissions = __1.Auth.getPermission(session.entity);
                 const hasPermission = Object.keys(permissions).some((key) => {
                     if (url.includes(key) || key === '*')

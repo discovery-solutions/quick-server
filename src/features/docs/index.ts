@@ -23,6 +23,116 @@ export class Docs {
       }
     };
 
+    if (config.auth.strategies.jwt) {
+      openAPI.paths["/system/auth"] = {
+        post: {
+          summary: "Login with JWT",
+          responses: {
+            200: {
+              description: "JWT Token received",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      accessToken: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }
+
+      openAPI.paths["/system/auth/refresh"] = {
+        post: {
+          summary: "Refresh JWT Token",
+          responses: {
+            200: {
+              description: "Refreshed JWT Token",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      accessToken: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }
+    }
+
+    if (config.auth.strategies.oauth) {
+      openAPI.paths["/system/oauth/{client}"] = {
+        get: {
+          summary: "Authenticate using OAuth",
+          parameters: [
+            {
+              name: "client",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: {
+              description: "OAuth authentication started",
+            },
+          },
+        },
+      }
+      openAPI.paths["/system/oauth/{client}"] = {
+        get: {
+          summary: "OAuth Callback",
+          parameters: [
+            {
+              name: "client",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: {
+              description: "OAuth callback processed",
+            },
+          },
+        },
+      }
+    }
+
+    openAPI.paths["/system/search"] = {
+      get: {
+        summary: "Search API Resources",
+        parameters: [
+          {
+            name: "query",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Search results",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { type: "object" },
+                },
+              },
+            },
+          },
+        },
+      },
+    }
+
     config.entities.forEach(entity => {
       const basePath = `/${entity.name}`;
       openAPI.paths[basePath] = {
@@ -141,120 +251,6 @@ export class Docs {
 
       openAPI.components.schemas[entity.alias] = schema;
     });
-
-    const authPaths = {
-      "/system/search": {
-        get: {
-          summary: "Search API Resources",
-          parameters: [
-            {
-              name: "query",
-              in: "query",
-              required: true,
-              schema: { type: "string" },
-            },
-          ],
-          responses: {
-            200: {
-              description: "Search results",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "array",
-                    items: { type: "object" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    if (config.auth.strategies.jwt) {
-      authPaths["/system/auth"] = {
-        post: {
-          summary: "Login with JWT",
-          responses: {
-            200: {
-              description: "JWT Token received",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      accessToken: { type: "string" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      }
-
-      authPaths["/system/auth/refresh"] = {
-        post: {
-          summary: "Refresh JWT Token",
-          responses: {
-            200: {
-              description: "Refreshed JWT Token",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      accessToken: { type: "string" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      }
-    }
-
-    if (config.auth.strategies.oauth) {
-      authPaths["/system/oauth/{client}"] = {
-        get: {
-          summary: "Authenticate using OAuth",
-          parameters: [
-            {
-              name: "client",
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-            },
-          ],
-          responses: {
-            200: {
-              description: "OAuth authentication started",
-            },
-          },
-        },
-      }
-      authPaths["/system/oauth/{client}"] = {
-        get: {
-          summary: "OAuth Callback",
-          parameters: [
-            {
-              name: "client",
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-            },
-          ],
-          responses: {
-            200: {
-              description: "OAuth callback processed",
-            },
-          },
-        },
-      }
-    }
-    
-    Object.assign(openAPI.paths, authPaths);
 
     if (config.auth.strategies.jwt) {
       openAPI.components.schemas.JWTToken = {

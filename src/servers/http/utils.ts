@@ -76,7 +76,7 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
     const routeParts = route.split('/');
     const pathParts = pathname.split('/');
 
-    if (routeParts.length !== pathParts.length) continue;
+    if (routeParts.length > pathParts.length) continue;
 
     let isMatch = true;
     const params: { [key: string]: string } = {};
@@ -84,13 +84,16 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
     for (let i = 0; i < routeParts.length; i++) {
       if (routeParts[i].startsWith(':')) {
         params[routeParts[i].slice(1)] = pathParts[i];
+      } else if (routeParts[i] === '*') {
+        params['wildcard'] = pathParts.slice(i).join('/');
+        break;
       } else if (routeParts[i] !== pathParts[i]) {
         isMatch = false;
         break;
       }
     }
 
-    if (isMatch) {
+    if (isMatch || routeParts[routeParts.length - 1] === '*') {
       routes[route][method].params = params;
       return routes[route][method];
     }

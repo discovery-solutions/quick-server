@@ -69,11 +69,23 @@ export class HTTPServer {
 
   private _register(method: string, suffix: string, handler: RouteHandler) {
     const path = (this.basePath ? `${this.basePath}${suffix}` : suffix).replace(/\/$/, '');
-    
-    if (!this.routes[path])
-      this.routes[path] = {};
 
-    this.routes[path][method] = handler;
+    if (path.endsWith('/*')) {
+      const basePath = path.slice(0, -2);
+
+      if (!this.routes[basePath])
+        this.routes[basePath] = {};
+
+        this.routes[basePath][method] = (ctx) => {
+          if ((ctx.request.url || '').startsWith(basePath)) return handler(ctx);
+          return new Error('Not Found');
+        };
+    } else {
+      if (!this.routes[path])
+        this.routes[path] = {};
+  
+      this.routes[path][method] = handler;
+    }
   }
 
   handleRequest = async (req: HTTPContext['request'], res: HTTPContext['response']) => {
@@ -125,6 +137,8 @@ export class HTTPServer {
         const { message, ...rest } = (error || {});
         logger.error(`Error for Incoming Request ${req.url}`);
         logger.error(error);
+
+        if (res.writableEnded) return;
 
         if (res.statusCode >= 200 && res.statusCode < 300) res.statusCode = 500;
         return res.end(JSON.stringify({ message: message || 'Internal Server Error', ...rest }));
@@ -189,7 +203,10 @@ export class HTTPServer {
 
       let isMatch = true;
       for (let i = 0; i < routeParts.length; i++) {
-        if (routeParts[i].startsWith(':')) {
+        if (routeParts[i] === '*') {
+          params['wildcard'] = pathParts.slice(i).join('/');
+          break;
+        } else if (routeParts[i].startsWith(':')) {
           params[routeParts[i].slice(1)] = pathParts[i];
         } else if (routeParts[i] !== pathParts[i]) {
           isMatch = false;

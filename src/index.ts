@@ -13,10 +13,13 @@ const logger = new Logger();
 export * from './types';
 
 export class QuickServer {
-  private config: Config;
+  public config: Config;
   private middlewares: Middleware[] = [];
+  static instance: QuickServer;
   
   constructor(filePath = path.join(process.cwd(), 'SERVER.yaml')) {
+    if (QuickServer.instance) return QuickServer.instance;
+
     this.config = extract(loadYaml(filePath));
 
     Logger.setConfig(this.config.developer.logger);
@@ -29,6 +32,8 @@ export class QuickServer {
 
     logger.log('Initializing Auth Setup');
     Auth.initialize(this.config.auth);
+
+    QuickServer.instance = this;
   }
 
   use(middleware: Middleware) {

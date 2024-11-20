@@ -1,8 +1,9 @@
 import { SocketServer, SocketContext } from './socket';
 import { HTTPServer, HTTPContext } from './http';
+import { Middleware, ServerTypes } from './types';
 import { Authentication } from '../features/system/auth/authentication';
 import { Authorization } from '../features/system/auth/authorization';
-import { Middleware } from './types';
+import { FileServer } from './file';
 import { Search } from '../features/system/search';
 import { Config } from '../types';
 import { Logger } from '../utils/logger';
@@ -16,7 +17,7 @@ export { SocketServer, HTTPServer, SocketContext, HTTPContext };
 
 export class Server {
   private static instance: Server | null = null;
-  private servers: Map<string, HTTPServer | SocketServer> = new Map();
+  private servers: Map<string, ServerTypes> = new Map();
 
   private constructor(servers: Config['servers']) {
     for (const server of servers) {
@@ -26,6 +27,9 @@ export class Server {
           break;
         case 'socket':
           this.servers.set(server.name, new SocketServer(server));
+          break;
+        case 'file':
+          this.servers.set(server.name, new FileServer(server) as HTTPServer);
           break;
         default:
           break;
@@ -39,7 +43,7 @@ export class Server {
     Server.instance = new Server(servers);
   }
 
-  public static get(name: string): HTTPServer | SocketServer | undefined {
+  public static get(name: string): ServerTypes | undefined {
     if (!Server.instance)
       throw new Error(`Server ${name} not initialized. Call Server.initialize(servers) first.`);
 
@@ -51,7 +55,7 @@ export class Server {
       throw new Error('Server not initialized. Call Server.initialize(servers) first.');
 
     logger.log('Starting servers...');
-    Server.instance.servers.forEach((server, key) => {
+    Server.instance.servers.forEach((server: ServerTypes, key) => {
       server.use(Logger.middleware);
       server.use(Authentication.middleware);
       server.use(Authorization.middleware);

@@ -1,4 +1,5 @@
 import { findRoute, NativeMiddlewares } from './utils';
+import { capitalize, promisify, sleep } from '../../utils';
 import { Database, DatabaseInterface } from '../../features/databases';
 import { HTTPContext, RouteHandler } from './types';
 import { Middleware, RequestParams } from '../types';
@@ -7,7 +8,6 @@ import { ServerConfig } from '../../types';
 import { createServer } from 'http';
 import { Logger } from '../../utils/logger';
 import { parse } from 'url';
-import { promisify, sleep } from '../../utils';
 
 const logger = new Logger('http-server');
 const ContentTypes = {
@@ -230,7 +230,7 @@ export class HTTPServer {
 
     server.listen(this.config.port, () => {
       logger.setOrigin(this.config.name);
-      logger.log(`Rest server running on port ${this.config.port}`);
+      logger.log(`${capitalize(this.config.type)} server running on port ${this.config.port}`);
     });
   }
 }

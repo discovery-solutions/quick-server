@@ -1,4 +1,7 @@
 import { IncomingHttpHeaders } from 'http';
+import { HTTPServer } from './http';
+import { SocketServer } from './socket';
+import { FileServer } from './file';
 
 export type Middleware = (ctx: Context) => any;
 
@@ -33,3 +36,5 @@ export interface Context {
   send: (data: any) => any;
   status: (code: number) => any;
 }
+
+export type ServerTypes = HTTPServer | SocketServer;

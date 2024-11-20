@@ -13,10 +13,14 @@ servers:
     request:
       limit: 10             # dez items por pagina
       timeout: 10           # dez segundos
-  - name: "Socket-Server"
-    port: 3500
-    type: "socket"
-    database: "mongodb"
+  # - name: "Socket-Server"
+  #   port: 3500
+  #   type: "socket"
+  #   database: "mongodb"
+  - name: "FrontEnd"
+    type: "file"
+    port: 3000
+    path: "/web"
 
 auth:
   strategies:

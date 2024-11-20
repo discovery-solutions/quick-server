@@ -51,6 +51,7 @@
     ],
     "watch": [
       "src",
+      "EXAMPLE.yaml",
       "SERVER.yaml"
     ],
     "exec": "clear && node -r tsconfig-paths/register -r ts-node/register ./src/dev.ts",

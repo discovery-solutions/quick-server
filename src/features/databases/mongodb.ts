@@ -16,6 +16,7 @@ export class MongoDB implements DatabaseInterface {
 
   private parseQuery(query: Record<string, any>) {
     if (query.id) {
+      console.log(query)
       query._id = new ObjectId(String(query.id));
       delete query.id;
     }

@@ -54,7 +54,12 @@ export class Logger {
 
     const hasData = Object.keys(data).length > 0;
     const breakLine = config?.formatted && hasData ? '\n' : ' ';
-    console.log(`${prefix}: ${[message, breakLine, this.parse(data)].join('')}`);
+    let content = `${prefix}: ${[message, breakLine, this.parse(data)].join('')}`;
+
+    if (raw instanceof Error)
+      content = `${content}\n${raw.stack}`;
+
+    console.log(content);
   }
 
   log(message: any, meta = {}) {

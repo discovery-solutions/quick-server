@@ -22,7 +22,6 @@ auth:
   strategies:
     jwt:
       secret: "super_secret_key"
-      expiresIn: "1h"
       entity:
         name: "user"
         identifiers: 
@@ -62,24 +61,19 @@ auth:
 
   permissions:
     default:
-      get: false
-      list: false
-      insert: false
-      update: false
-      delete: false
+      # insert: true
+      # update: true
+      # delete: true
+      get: true
+      list: true
     entities:
       user:
         "*": 
+          insert: true
+          update: true
+          delete: true
           get: true
           list: true
-        user:
-          insert: true
-          update: true
-          delete: true
-        post: 
-          insert: true
-          update: true
-          delete: true
       company:
         "*": 
           get: true
@@ -99,26 +93,6 @@ databases:
     logs: true
 
 entities:
-  - name: "user"
-    alias: "User"
-    auth:
-      type: "jwt"
-      jwt:
-        fields: ["email", "password"]
-    fields:
-      name:
-        type: "string"
-        required: true
-      email:
-        type: "string"
-        required: true
-      avatar: 
-        type: "file"
-      password:
-        type: "string"
-        required: true
-        secure: true
-
   - name: "company"
     alias: "Company"
     fields:
@@ -137,9 +111,57 @@ entities:
       oauth:
         strategy: "google"
 
+  - name: "user"
+    alias: "User"
+    auth:
+      type: "jwt"
+      jwt:
+        fields: ["email", "password"]
+    fields:
+      name:
+        type: "string"
+        required: true
+      email:
+        type: "string"
+        required: true
+      avatar:
+        type: "file"
+      password:
+        type: "string"
+        required: true
+        secure: true
+
+  - name: "category"
+    alias: "Category"
+    fields:
+      name:
+        type: "string"
+        required: true
+      description:
+        type: "string"
+        required: false
+      parent:
+        type: "entity"
+        entity: "category"
+        required: false
+
   - name: "post"
     alias: "Post"
     fields:
-      title: "string"
-      date: "date"
-      content: "string"
+      title:
+        type: "string"
+        required: true
+      content:
+        type: "string"
+        required: true
+      author:
+        type: "entity"
+        entity: "user"
+        required: true
+      category:
+        type: "entity"
+        entity: "category"
+        required: false
+      tags:
+        type: "object"
+        required: false

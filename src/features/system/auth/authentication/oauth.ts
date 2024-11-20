@@ -44,7 +44,7 @@ export class OAuth {
       headers: { Authorization: `Bearer ${provider.access_token}` },
     });
 
-    const { clientSecret, refreshToken: { expiration }, entity: { identifier, mapper, name }} = strategy;
+    const { clientSecret, refreshToken, entity: { identifier, mapper, name }} = strategy;
     const mappedUser = Object.keys(mapper).reduce((obj, key) => {
       obj[mapper[key]] = info[key];
       return obj;
@@ -53,8 +53,11 @@ export class OAuth {
     const entity = await Utils.ensureUserExists(database, name, identifier, mappedUser);
     const payload = { entity: name, [name]: entity };
 
-    const tokens = Utils.generateTokens(payload, clientSecret, expiration);
-    await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, expiration);
+    const tokens = Utils.generateTokens(payload, clientSecret, refreshToken?.expiration);
+    
+    if (!refreshToken?.enabled) delete tokens.refreshToken;
+
+    await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, refreshToken?.expiration);
 
     return ctx.send({ message: 'Entity authenticated', entity, auth: tokens });
   }

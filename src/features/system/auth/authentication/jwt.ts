@@ -7,7 +7,7 @@ import { Auth } from '..';
 export class JWTAuth {
   // POST /system/auth
   static async login(ctx: Context) {
-    const { secret, expiresIn, refreshExpiresIn, entity: { name, identifiers }} = Auth.getStrategy('jwt') as AuthStrategies['jwt'];
+    const { secret, refreshToken, entity: { name, identifiers }} = Auth.getStrategy('jwt') as AuthStrategies['jwt'];
     const database = Database.get(ctx.getInfo().database);
     
     const body = identifiers.reduce((obj, key) => {
@@ -20,15 +20,18 @@ export class JWTAuth {
     if (!entity) return ctx.status(401).error(new Error('Invalid credentials'));
     
     const payload = { entity: name, [name]: entity };
-    const tokens = Utils.generateTokens(payload, secret, expiresIn, refreshExpiresIn);
-    await Utils.saveAuthDetails(database, entity.id, 'jwt', '', tokens, expiresIn, refreshExpiresIn);
+    const tokens = Utils.generateTokens(payload, secret, refreshToken?.expiration);
+
+    if (!refreshToken?.enabled) delete tokens.refreshToken;
+
+    await Utils.saveAuthDetails(database, entity.id, 'jwt', '', tokens, refreshToken?.expiration);
 
     return ctx.send({ message: 'Login successful', auth: tokens });
   }
 
   // POST /system/auth/refresh
   static async refreshToken(ctx: Context) {
-    const { secret, expiresIn, refreshExpiresIn, entity: { name }} = Auth.getStrategy("jwt") as AuthStrategies["jwt"];
+    const { secret, refreshToken, entity: { name }} = Auth.getStrategy("jwt") as AuthStrategies["jwt"];
     const database = Database.get(ctx.getInfo().database);
 
     const oldRefreshToken = (ctx.getHeader("Authorization") as string)?.split(" ")[1];
@@ -40,7 +43,7 @@ export class JWTAuth {
 
       if (!user) return ctx.status(401).error(new Error("Invalid user"));
 
-      const tokens = Utils.generateTokens(user, secret, expiresIn, refreshExpiresIn);
+      const tokens = Utils.generateTokens(user, secret, refreshToken.expiration);
       return ctx.send({ message: "Token refreshed successfully", auth: tokens });
     } catch {
       return ctx.status(401).error(new Error("Invalid refresh token"));

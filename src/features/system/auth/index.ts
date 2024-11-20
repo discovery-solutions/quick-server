@@ -22,7 +22,7 @@ export class Auth {
       throw new Error(`AuthConfig not initialized. Call Auth.initialize(entities) first.`);
 
     if (key === 'oauth' && client) {
-      const oauthStrategies = Auth.instance.config.strategies[key] as Record<string, AuthConfig['strategies']>;
+      const oauthStrategies = Auth.instance.config.strategies[key] as Record<string, OAuthStrategy>;
       
       if (oauthStrategies && oauthStrategies[client])
         return oauthStrategies[client] as OAuthStrategy;
@@ -38,7 +38,7 @@ export class Auth {
       throw new Error(`AuthConfig not initialized. Call Auth.initialize(entities) first.`);
 
     const { permissions } = Auth.instance.config;
-    const permission = permissions[key] || permissions.entities[key];
+    const permission = permissions?.[key] || permissions?.entities?.[key];
 
     if (permission) return permission;
     return permissions.default;

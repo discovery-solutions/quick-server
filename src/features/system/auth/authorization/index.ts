@@ -13,7 +13,8 @@ const METHODS_TO_ACTIONS = {
 
 export class Authorization {
   static middleware(ctx: Context) {
-    const { url, method, session } = ctx.getInfo();
+    const { url, method: _method, session } = ctx.getInfo();
+    const method = _method.toLowerCase();
     const entities = EntityManager.list();
 
     const isWhitelisted = WHITELIST.some((path) => url.includes(path));
@@ -22,18 +23,21 @@ export class Authorization {
     const entity = Array.from(entities).find((path) => url.includes(path)); 
     if (entity) {
       const defaultPermissions = Auth.getPermission('default');
-      const isAuthorized = defaultPermissions?.['*']?.[method.toLowerCase()] || defaultPermissions?.[entity]?.[method.toLowerCase()];
+      const isAuthorized = defaultPermissions?.['*']?.[method] || defaultPermissions?.[entity]?.[method];
       
       if (isAuthorized) return;
 
       if (session.entity) {
         const permissions = Auth.getPermission(session.entity);
-        const hasPermission = Object.keys(permissions).some((key) => {
-          if (url.includes(key) || key === '*')
-          return METHODS_TO_ACTIONS[method.toLowerCase()].some((action) => permissions[key][action])
+        const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => permissions?.['*']?.[action] || permissions?.[action]);
+        const hasEntityPermission = Object.keys(permissions).some((key) => {
+          if (url.includes(key) && key !== '*')
+            return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action])
+
+          return false;
         });
         
-        if (hasPermission) return;
+        if (hasGobalPermission || hasEntityPermission) return;
       }
     }
 

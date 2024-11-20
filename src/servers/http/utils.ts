@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { HTTPContext, RouteHandler } from './types';
+import { RouteHandler } from './types';
 
 function jsonParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>) {
   return new Promise(resolve => {
@@ -76,7 +76,7 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
     const routeParts = route.split('/');
     const pathParts = pathname.split('/');
 
-    if (routeParts.length > pathParts.length) continue;
+    if (routeParts.length !== pathParts.length) continue;
 
     let isMatch = true;
     const params: { [key: string]: string } = {};

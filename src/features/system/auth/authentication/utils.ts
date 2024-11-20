@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { DatabaseInterface } from '../../../databases';
 
-const DEFAULT_REFRESH_EXPIRES_IN = 60 * 60; // 1 hour
-const DEFAULT_EXPIRES_IN = 60 * 30;         // 30 minutes
+const DEFAULT_REFRESH_EXPIRES_IN = '10d';
+const DEFAULT_EXPIRES_IN = '12h';
 
 export const generateTokens = (
   payload: object,

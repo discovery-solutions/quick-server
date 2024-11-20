@@ -20,7 +20,10 @@ export class ServerConfig implements ServerConfigParams {
   database?: ServerConfigParams['database'];
   path?: string;
   secure?: ServerConfigParams['secure'];
-  request: ServerConfigParams['request'];
+  request: ServerConfigParams['request'] = {
+    timeout: 1000 * 60, // default: 60 segundos
+    limit: 10,
+  };
   
   constructor(parameters: ServerConfigParams) {
     for (const key in parameters)

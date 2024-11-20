@@ -81836,6 +81836,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ServerConfig = void 0;
 class ServerConfig {
     constructor(parameters) {
+        this.request = {
+            timeout: 1000 * 60, // default: 60 segundos
+            limit: 10,
+        };
         for (const key in parameters)
             this[key] = parameters[key];
         if (typeof this.format === 'undefined')

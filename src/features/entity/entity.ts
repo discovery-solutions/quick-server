@@ -1,5 +1,5 @@
 import { EntityManager } from ".";
-import { EntityConfig, EntityField } from "../../types";
+import { EntityConfig, EntityField } from "../../types/";
 import { capitalize } from "../../utils";
 import { DatabaseInterface } from "../databases";
 

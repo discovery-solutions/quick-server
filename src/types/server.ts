@@ -1,25 +1,26 @@
+
 export interface ServerConfigParams {
   name: string;
   port: number;
-  type: 'rest' | 'socket';
-  format: 'json' | 'csv' | 'xml' | 'html' | 'yaml';
-  database: string;
-  request: {
+  type: 'rest' | 'socket' | 'file';
+  format?: 'json' | 'csv' | 'xml' | 'html' | 'yaml';
+  database?: string;
+  secure?: boolean;
+  request?: {
     limit: number;
     timeout: number; 
   };
 }
 
 export class ServerConfig implements ServerConfigParams {
-  name: string;
-  port: number;
-  type: 'rest' | 'socket';
-  format: 'json' | 'csv' | 'xml' | 'html' | 'yaml';
-  database: string;
-  request = {
-    timeout: 1000 * 60, // default: 60 segundos
-    limit: 10,
-  };
+  name: ServerConfigParams['name'];
+  port: ServerConfigParams['port'];
+  type: ServerConfigParams['type'];
+  format?: ServerConfigParams['format'];
+  database?: ServerConfigParams['database'];
+  path?: string;
+  secure?: ServerConfigParams['secure'];
+  request: ServerConfigParams['request'];
   
   constructor(parameters: ServerConfigParams) {
     for (const key in parameters)

@@ -1,4 +1,16 @@
 import { EntityPermission } from "./entity";
+export interface JWTStrategy {
+  secret: string;
+  refreshToken: {
+    enabled: boolean
+    expiration: string;
+  }
+  entity: {
+    name: string;
+    identifiers?: string[];
+    mapper?: Record<string, string>;
+  }
+}
 
 export interface OAuthStrategy {
   clientId: string;
@@ -17,15 +29,7 @@ export interface OAuthStrategy {
 }
 
 export interface AuthStrategies {
-  jwt?: {
-    secret: string;
-    expiresIn: string;
-    refreshExpiresIn: string;
-    entity: {
-      name: string;
-      identifiers: string[];
-    }
-  };
+  jwt?: JWTStrategy;
   oauth?: {
     google?: OAuthStrategy;
     facebook?: OAuthStrategy;

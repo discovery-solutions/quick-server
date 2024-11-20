@@ -24,7 +24,9 @@ export class Authorization {
     if (isWhitelisted) return;
 
     const defaultPermissions = Auth.getPermission('default');
-    const isAuthorized = defaultPermissions?.[method];
+    const isAuthorized = METHODS_TO_ACTIONS[method].some((action) => defaultPermissions?.[action]);
+
+    console.log(defaultPermissions, isAuthorized);
     
     if (isAuthorized) return;
 

@@ -23,9 +23,8 @@ export class Authorization {
     const isWhitelisted = WHITELIST.some((path) => url.includes(path));
     if (isWhitelisted) return;
 
-    const entity = Array.from(entities).find((path) => url.includes(path)); 
     const defaultPermissions = Auth.getPermission('default');
-    const isAuthorized = defaultPermissions?.['*']?.[method] || defaultPermissions?.[entity]?.[method];
+    const isAuthorized = defaultPermissions?.[method];
     
     if (isAuthorized) return;
 

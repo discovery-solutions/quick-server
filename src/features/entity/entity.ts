@@ -39,13 +39,12 @@ export class Entity implements EntityConfig {
     const resolvedData = { ...data };
    
     for (const [field, relatedEntity] of Object.entries(this.relationships)) {
-      if (data[field])
+      if (data[field]) {
         resolvedData[field] = await db.get(relatedEntity.name, { id: data[field] });
 
-      console.log(field, resolvedData[field], data[field]);
-      
-      if (resolvedData[field].length === 1)
-        resolvedData[field] = resolvedData[field].pop();
+        if (resolvedData[field].length === 1)
+          resolvedData[field] = resolvedData[field].pop();
+      }
     }
 
     return resolvedData;

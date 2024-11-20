@@ -22,9 +22,9 @@ export { HTTPContext };
 export class HTTPServer {
   private routes: { [key: string]: { [method: string]: RouteHandler } } = {};
   private middlewares: ((ctx: HTTPContext) => Promise<any>)[] = [];
-  private config: ServerConfig;
   private basePath: string;
   public database: DatabaseInterface;
+  public config: ServerConfig;
 
   constructor(config: ServerConfig) {
     this.database = Database.get(config.database);

@@ -10,9 +10,9 @@ export { SocketContext };
 export class SocketServer {
   private routes: { [path: string]: WebSocketHandler } = {};
   private middlewares: ((ctx: SocketContext) => Promise<void>)[] = [];
-  private config: ServerConfig;
   private logger: Logger;
   public database: DatabaseInterface;
+  public config: ServerConfig;
 
   constructor(config: ServerConfig) {
     this.database = Database.get(config.database);

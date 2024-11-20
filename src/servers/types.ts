@@ -1,7 +1,7 @@
 import { IncomingHttpHeaders } from 'http';
-import { HTTPServer } from './http';
+import { ServerConfig } from '../types';
 import { SocketServer } from './socket';
-import { FileServer } from './file';
+import { HTTPServer } from './http';
 
 export type Middleware = (ctx: Context) => any;
 

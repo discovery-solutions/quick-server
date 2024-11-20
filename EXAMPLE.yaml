@@ -21,6 +21,7 @@ servers:
     type: "file"
     port: 3000
     path: "/web"
+    secure: true
 
 auth:
   strategies:

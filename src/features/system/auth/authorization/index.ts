@@ -1,5 +1,5 @@
 import { EntityManager } from '../../../entity';
-import { Context } from '../../../../servers';
+import { Context, Server } from '../../../../servers';
 import { Auth } from '..';
 
 const WHITELIST = ['system', 'auth'];
@@ -13,9 +13,13 @@ const METHODS_TO_ACTIONS = {
 
 export class Authorization {
   static middleware(ctx: Context) {
-    const { url, method: _method, session } = ctx.getInfo();
-    const method = _method.toLowerCase();
+    const { url, method: methodUpperCase, session, server: serverName } = ctx.getInfo();
+    const server = Server.get(serverName);
+    const method = methodUpperCase.toLowerCase();
     const entities = EntityManager.list();
+
+
+    if (server.config.type === 'file' && !server.config.secure) return;
 
     const isWhitelisted = WHITELIST.some((path) => url.includes(path));
     if (isWhitelisted) return;

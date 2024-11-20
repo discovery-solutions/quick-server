@@ -59,6 +59,7 @@ export interface ServerConfigParams {
   type: 'rest' | 'socket' | 'file';
   format?: 'json' | 'csv' | 'xml' | 'html' | 'yaml';
   database?: string;
+  secure?: boolean;
   request?: {
     limit: number;
     timeout: number; 
@@ -66,12 +67,13 @@ export interface ServerConfigParams {
 }
 
 export class ServerConfig implements ServerConfigParams {
-  name: string;
-  port: number;
+  name: ServerConfigParams['name'];
+  port: ServerConfigParams['port'];
   type: ServerConfigParams['type'];
   format?: ServerConfigParams['format'];
-  database?: string;
+  database?: ServerConfigParams['database'];
   path?: string;
+  secure?: ServerConfigParams['secure'];
   request: ServerConfigParams['request'];
   
   constructor(parameters: ServerConfigParams) {
@@ -84,6 +86,8 @@ export class ServerConfig implements ServerConfigParams {
     if (typeof this.request === 'undefined') this.request = { limit: 10, timeout: 1000 * 60 };
     if (typeof this.request?.limit === 'undefined') this.request.limit = 10;
     if (typeof this.request?.timeout === 'undefined') this.request.timeout = 1000 * 60;
+
+    if (typeof this.secure === 'undefined') this.secure = false;
     else this.request.timeout *= 1000;
   }
 }

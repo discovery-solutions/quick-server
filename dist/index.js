@@ -81879,10 +81879,10 @@ const loadEnv = (filePath = '.env') => {
     try {
         const envPath = path_1.default.resolve(process.cwd(), filePath);
         if (!fs_1.default.existsSync(envPath))
-            throw new Error(`File "${filePath}" not found at ${envPath}`);
+            return;
         const raw = fs_1.default.readFileSync(envPath, 'utf8');
         const regex = /^\s*([\w.-]+)\s*=\s*(.+)?$/;
-        raw.split('\n').forEach(line => {
+        return raw.split('\n').forEach(line => {
             const match = line.match(regex);
             if (match) {
                 const [, key, value] = match;
@@ -81893,7 +81893,7 @@ const loadEnv = (filePath = '.env') => {
         });
     }
     catch (error) {
-        logger.error(error);
+        return error;
     }
 };
 

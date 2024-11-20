@@ -159,15 +159,15 @@ export class HTTPServer {
       try {
         const route = findRoute(pathname, method, this.routes);
         
+        if (!route)
+          return reject(new Error('Not Found'));
+        
         for (const mw of this.middlewares) {
           if (res.writableEnded)
             return resolve(false);
 
           await promisify(mw(ctx));
         }
-    
-        if (!route)
-          return reject(new Error('Not Found'));
     
         if (res.writableEnded)
           return resolve(false);

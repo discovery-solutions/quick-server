@@ -64,10 +64,12 @@ export class Server {
         for (const middleware of middlewares)
           server.use(middleware);
 
-      server.apply(Authentication.routes);
-      server.apply(CRUD.middleware);
-      server.apply(Search.routes);
-      server.apply(Docs.routes);
+      if (server.config.type !== 'file') {
+        server.apply(Authentication.routes);
+        server.apply(CRUD.middleware);
+        server.apply(Search.routes);
+        server.apply(Docs.routes);
+      }
 
       if (server) server.start();
     });

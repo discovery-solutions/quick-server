@@ -1,0 +1,110 @@
+developer:
+  env: ".env"
+  logger:
+    formatted: true
+    verbose: false
+
+servers:
+  - name: "DevBlog-API"
+    port: 4000
+    type: "rest"
+    format: "json"
+    database: "mongodb"
+    request:
+      limit: 20             # vinte itens por página (ideal para exibir posts)
+      timeout: 15           # quinze segundos
+  - name: "DevBlog-FrontEnd"
+    type: "file"
+    port: 3000
+    path: "/test/www"
+
+auth:
+  strategies:
+    jwt:
+      secret: "devblog_super_secret_key"
+      expiresIn: "1h"
+      entity:
+        name: "user"
+        identifiers: 
+          - "email"
+          - "password"
+
+  permissions:
+    default:
+      get: true
+      list: true
+      insert: false
+      update: false
+      delete: false
+    entities:
+      user:
+        "*":
+          get: true
+          list: true
+          insert: true
+          update: true
+          delete: true
+
+databases:
+  - type: mongodb
+    key: "mongodb"
+    uri: "mongodb+srv://username:password@cluster.mongodb.net/devblog"
+    name: "devblog_db"
+    logs: true
+
+entities:
+  - name: "user"
+    alias: "User"
+    auth:
+      type: "jwt"
+      jwt:
+        fields: ["email", "password"]
+    fields:
+      name:
+        type: "string"
+        required: true
+      email:
+        type: "string"
+        required: true
+      avatar:
+        type: "file"
+      password:
+        type: "string"
+        required: true
+        secure: true
+
+  - name: "category"
+    alias: "Category"
+    fields:
+      name:
+        type: "string"
+        required: true
+      description:
+        type: "string"
+        required: false
+      parent:
+        type: "entity"
+        entity: "category"
+        required: false
+
+  - name: "post"
+    alias: "Post"
+    fields:
+      title:
+        type: "string"
+        required: true
+      date:
+        type: "date"
+        required: true
+      content:
+        type: "string"
+        required: true
+      author:
+        type: "entity"
+        entity: "user"
+        required: true
+      category:
+        type: "entity"
+        entity: "category"
+        required: false
+

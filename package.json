@@ -8,6 +8,7 @@
   "scripts": {
     "release": "standard-version && git push --follow-tags origin main",
     "build": "rimraf dist && npx ncc build src/index.ts -o dist",
+    "test": "npm run build && clear && node --experimental-modules ./test/index.mjs",
     "dev": "nodemon",
     "prepublishOnly": "npm run build"
   },

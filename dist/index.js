@@ -81030,8 +81030,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.FileServer = void 0;
 const http_1 = __nccwpck_require__(81397);
-const fs = __importStar(__nccwpck_require__(79896));
 const path = __importStar(__nccwpck_require__(16928));
+const fs = __importStar(__nccwpck_require__(79896));
 class FileServer {
     constructor(config) {
         const server = new http_1.HTTPServer({
@@ -81042,7 +81042,8 @@ class FileServer {
         });
         server.get('*', (ctx) => {
             const { pathname: urlPath } = new URL(ctx.request.url, `http://${ctx.request.headers.host}`);
-            const requestedFilePath = path.join(process.cwd(), config.path, urlPath);
+            const file = urlPath === '/' ? 'index.html' : urlPath;
+            const requestedFilePath = path.join(process.cwd(), config.path, file);
             if (!fs.existsSync(requestedFilePath))
                 return ctx.error(new Error('File not found'));
             const extname = path.extname(requestedFilePath).toLowerCase();
@@ -81180,13 +81181,13 @@ class HTTPServer {
             const routePromise = new Promise(async (resolve, reject) => {
                 try {
                     const route = (0, utils_1.findRoute)(pathname, method, this.routes);
+                    if (!route)
+                        return reject(new Error('Not Found'));
                     for (const mw of this.middlewares) {
                         if (res.writableEnded)
                             return resolve(false);
                         await (0, utils_2.promisify)(mw(ctx));
                     }
-                    if (!route)
-                        return reject(new Error('Not Found'));
                     if (res.writableEnded)
                         return resolve(false);
                     await (0, utils_2.promisify)(route(ctx));
@@ -81407,10 +81408,11 @@ async function corsMiddleware(request, response) {
 }
 exports.NativeMiddlewares = { jsonParser, formParser, corsMiddleware };
 function findRoute(pathname, method, routes) {
-    for (const route of Object.keys(routes)) {
+    for (const raw of Object.keys(routes)) {
+        const route = (raw === '*') ? '/*' : raw;
         const routeParts = route.split('/');
         const pathParts = pathname.split('/');
-        if (routeParts.length !== pathParts.length)
+        if (routeParts.length !== pathParts.length && !routeParts.includes('*'))
             continue;
         let isMatch = true;
         const params = {};
@@ -81428,8 +81430,8 @@ function findRoute(pathname, method, routes) {
             }
         }
         if (isMatch || routeParts[routeParts.length - 1] === '*') {
-            routes[route][method].params = params;
-            return routes[route][method];
+            routes[raw][method].params = params;
+            return routes[raw][method];
         }
     }
     return undefined;
@@ -81512,10 +81514,12 @@ class Server {
             if (middlewares)
                 for (const middleware of middlewares)
                     server.use(middleware);
-            server.apply(authentication_1.Authentication.routes);
-            server.apply(crud_1.CRUD.middleware);
-            server.apply(search_1.Search.routes);
-            server.apply(docs_1.Docs.routes);
+            if (server.config.type !== 'file') {
+                server.apply(authentication_1.Authentication.routes);
+                server.apply(crud_1.CRUD.middleware);
+                server.apply(search_1.Search.routes);
+                server.apply(docs_1.Docs.routes);
+            }
             if (server)
                 server.start();
         });

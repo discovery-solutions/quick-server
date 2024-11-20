@@ -72,11 +72,12 @@ async function corsMiddleware(request: IncomingMessage, response: ServerResponse
 export const NativeMiddlewares = { jsonParser, formParser, corsMiddleware };
 
 export function findRoute(pathname: string, method: string, routes: any): RouteHandler | undefined {
-  for (const route of Object.keys(routes)) {
+  for (const raw of Object.keys(routes)) {
+    const route = (raw === '*') ? '/*' : raw;
     const routeParts = route.split('/');
     const pathParts = pathname.split('/');
 
-    if (routeParts.length !== pathParts.length) continue;
+    if (routeParts.length !== pathParts.length && !routeParts.includes('*')) continue;
 
     let isMatch = true;
     const params: { [key: string]: string } = {};
@@ -94,8 +95,8 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
     }
 
     if (isMatch || routeParts[routeParts.length - 1] === '*') {
-      routes[route][method].params = params;
-      return routes[route][method];
+      routes[raw][method].params = params;
+      return routes[raw][method];
     }
   }
 

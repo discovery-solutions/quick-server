@@ -1,7 +1,7 @@
 import { HTTPContext, HTTPServer } from "../http";
-import * as fs from 'fs';
-import * as path from 'path';
 import { ServerConfig } from "../../types";
+import * as path from 'path';
+import * as fs from 'fs';
 
 export class FileServer {
   constructor(config: ServerConfig) {
@@ -14,8 +14,9 @@ export class FileServer {
 
     server.get('*', (ctx: HTTPContext) => {
       const { pathname: urlPath } = new URL(ctx.request.url, `http://${ctx.request.headers.host}`);
-      const requestedFilePath = path.join(process.cwd(), config.path, urlPath);
-
+      const file = urlPath === '/' ? 'index.html' : urlPath;
+      const requestedFilePath = path.join(process.cwd(), config.path, file);
+      
       if (!fs.existsSync(requestedFilePath))
         return ctx.error(new Error('File not found'));
 

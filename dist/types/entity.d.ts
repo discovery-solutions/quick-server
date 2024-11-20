@@ -1,5 +1,6 @@
 export interface EntityField {
-    type: 'string' | 'number' | 'boolean' | 'file' | 'object' | 'array';
+    type: 'string' | 'number' | 'boolean' | 'file' | 'object' | 'array' | 'entity';
+    entity?: string;
     required?: boolean;
     secure?: boolean;
 }

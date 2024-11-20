@@ -80810,7 +80810,6 @@ const METHODS_TO_ACTIONS = {
 };
 class Authorization {
     static middleware(ctx) {
-        var _a, _b;
         const { url, method: methodUpperCase, session, server: serverName } = ctx.getInfo();
         const server = servers_1.Server.get(serverName);
         const method = methodUpperCase.toLowerCase();
@@ -80820,23 +80819,21 @@ class Authorization {
         const isWhitelisted = WHITELIST.some((path) => url.includes(path));
         if (isWhitelisted)
             return;
-        const entity = Array.from(entities).find((path) => url.includes(path));
-        if (entity) {
-            const defaultPermissions = __1.Auth.getPermission('default');
-            const isAuthorized = ((_a = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions['*']) === null || _a === void 0 ? void 0 : _a[method]) || ((_b = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[entity]) === null || _b === void 0 ? void 0 : _b[method]);
-            if (isAuthorized)
+        const defaultPermissions = __1.Auth.getPermission('default');
+        const isAuthorized = METHODS_TO_ACTIONS[method].some((action) => defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[action]);
+        console.log(defaultPermissions, isAuthorized);
+        if (isAuthorized)
+            return;
+        if (session.entity) {
+            const permissions = __1.Auth.getPermission(session.entity);
+            const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => { var _a; return ((_a = permissions === null || permissions === void 0 ? void 0 : permissions['*']) === null || _a === void 0 ? void 0 : _a[action]) || (permissions === null || permissions === void 0 ? void 0 : permissions[action]); });
+            const hasEntityPermission = Object.keys(permissions).some((key) => {
+                if (url.includes(key) && key !== '*')
+                    return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action]);
+                return false;
+            });
+            if (hasGobalPermission || hasEntityPermission)
                 return;
-            if (session.entity) {
-                const permissions = __1.Auth.getPermission(session.entity);
-                const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => { var _a; return ((_a = permissions === null || permissions === void 0 ? void 0 : permissions['*']) === null || _a === void 0 ? void 0 : _a[action]) || (permissions === null || permissions === void 0 ? void 0 : permissions[action]); });
-                const hasEntityPermission = Object.keys(permissions).some((key) => {
-                    if (url.includes(key) && key !== '*')
-                        return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action]);
-                    return false;
-                });
-                if (hasGobalPermission || hasEntityPermission)
-                    return;
-            }
         }
         return ctx
             .status(403)
@@ -80966,7 +80963,7 @@ const logger_1 = __nccwpck_require__(7893);
 const auth_1 = __nccwpck_require__(76688);
 const path_1 = __importDefault(__nccwpck_require__(16928));
 const logger = new logger_1.Logger();
-__exportStar(__nccwpck_require__(38522), exports);
+__exportStar(__nccwpck_require__(31569), exports);
 class QuickServer {
     constructor(filePath = path_1.default.join(process.cwd(), 'SERVER.yaml')) {
         this.middlewares = [];
@@ -81105,7 +81102,7 @@ const utils_1 = __nccwpck_require__(40956);
 const utils_2 = __nccwpck_require__(78541);
 const databases_1 = __nccwpck_require__(14714);
 const utils_3 = __nccwpck_require__(29457);
-const types_1 = __nccwpck_require__(38522);
+const types_1 = __nccwpck_require__(31569);
 const http_1 = __nccwpck_require__(58611);
 const logger_1 = __nccwpck_require__(7893);
 const url_1 = __nccwpck_require__(87016);
@@ -81749,7 +81746,88 @@ function parseResponse(format, data) {
 
 /***/ }),
 
-/***/ 38522:
+/***/ 78939:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuthConfig = void 0;
+class AuthConfig {
+    constructor(parameters = {}) {
+        var _a, _b;
+        this.strategies = parameters.strategies;
+        this.permissions = {
+            entities: ((_a = parameters.permissions) === null || _a === void 0 ? void 0 : _a.entities) || {},
+            default: Object.assign({ get: true, list: true, insert: true, update: true, delete: true }, (((_b = parameters.permissions) === null || _b === void 0 ? void 0 : _b.default) || {})),
+        };
+    }
+}
+exports.AuthConfig = AuthConfig;
+
+
+/***/ }),
+
+/***/ 14272:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 46255:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 52598:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 31569:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(46255), exports);
+__exportStar(__nccwpck_require__(14272), exports);
+__exportStar(__nccwpck_require__(52598), exports);
+__exportStar(__nccwpck_require__(16174), exports);
+__exportStar(__nccwpck_require__(78939), exports);
+
+
+/***/ }),
+
+/***/ 16174:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -81758,21 +81836,16 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ServerConfig = void 0;
 class ServerConfig {
     constructor(parameters) {
-        var _a, _b;
         for (const key in parameters)
             this[key] = parameters[key];
         if (typeof this.format === 'undefined')
             this.format = 'json';
         if (typeof this.type === 'undefined')
             this.type = 'rest';
-        if (typeof this.request === 'undefined')
-            this.request = { limit: 10, timeout: 1000 * 60 };
-        if (typeof ((_a = this.request) === null || _a === void 0 ? void 0 : _a.limit) === 'undefined')
+        if (typeof this.request.limit === 'undefined')
             this.request.limit = 10;
-        if (typeof ((_b = this.request) === null || _b === void 0 ? void 0 : _b.timeout) === 'undefined')
+        if (typeof this.request.timeout === 'undefined')
             this.request.timeout = 1000 * 60;
-        if (typeof this.secure === 'undefined')
-            this.secure = false;
         else
             this.request.timeout *= 1000;
     }

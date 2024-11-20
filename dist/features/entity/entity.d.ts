@@ -1,4 +1,4 @@
-import { EntityConfig, EntityField } from "../../types";
+import { EntityConfig, EntityField } from "../../types/";
 import { DatabaseInterface } from "../databases";
 export declare class Entity implements EntityConfig {
     name: EntityConfig['name'];

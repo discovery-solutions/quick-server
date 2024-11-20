@@ -1,4 +1,6 @@
 import { IncomingHttpHeaders } from 'http';
+import { HTTPServer } from './http';
+import { SocketServer } from './socket';
 export type Middleware = (ctx: Context) => any;
 export type RequestParams = {
     [key: string]: string | string[] | undefined;
@@ -30,3 +32,4 @@ export interface Context {
     send: (data: any) => any;
     status: (code: number) => any;
 }
+export type ServerTypes = HTTPServer | SocketServer;

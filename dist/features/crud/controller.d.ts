@@ -4,8 +4,9 @@ export declare class ControllerCRUD {
     private model;
     private database;
     private entity;
-    constructor(model: any);
+    constructor(model: string);
     setDatabase: (database: DatabaseInterface) => void;
+    private resolveEntityRelations;
     list: (ctx: HTTPContext | SocketContext) => Promise<any>;
     create: (ctx: HTTPContext | SocketContext) => Promise<any>;
     get: (ctx: HTTPContext | SocketContext) => Promise<any>;

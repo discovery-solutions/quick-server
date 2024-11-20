@@ -79141,51 +79141,70 @@ class ControllerCRUD {
         };
         this.list = async (ctx) => {
             const entities = await this.database.get(this.model, {});
-            return ctx.send(this.entity.secure(entities));
+            const resolvedEntities = await this.resolveEntityRelations(entities);
+            return ctx.send(this.entity.secure(resolvedEntities));
         };
         this.create = async (ctx) => {
             const data = ctx.getBody();
             const { valid, errors } = this.entity.validate(data);
-            if (valid === false)
-                return ctx.status(400).error({ message: `Invalid fields for new ${this.model}`, errors });
+            if (!valid) {
+                return ctx.status(400).error({
+                    message: `Invalid fields for new ${this.model}`,
+                    errors,
+                });
+            }
             const id = await this.database.insert(this.model, data);
             return ctx.send({ id });
         };
         this.get = async (ctx) => {
             const { id } = ctx.getParams();
             const [data] = await this.database.get(this.model, { id });
-            if (!data)
-                return ctx.status(404).error(new Error('Entity not found'));
-            return ctx.send(this.entity.secure(data));
+            if (!data) {
+                return ctx.status(404).error(new Error("Entity not found"));
+            }
+            const resolvedData = await this.resolveEntityRelations(data);
+            return ctx.send(this.entity.secure(resolvedData));
         };
         this.update = async (ctx) => {
             const data = ctx.getBody();
             const { id } = ctx.getParams();
-            const { valid, errors } = this.entity.validate(data);
-            if (valid === false)
-                return ctx.status(400).error({ message: `Invalid fields to update ${this.model} #${id}`, errors });
+            const { valid, errors } = this.entity.validate(data, false);
+            if (!valid) {
+                return ctx.status(400).error({
+                    message: `Invalid fields to update ${this.model} #${id}`,
+                    errors,
+                });
+            }
             await this.database.update(this.model, { id }, data);
-            return ctx.send({ message: 'Entity updated successfully' });
+            return ctx.send({ message: "Entity updated successfully" });
         };
         this.delete = async (ctx) => {
             const { id } = ctx.getParams();
             await this.database.delete(this.model, { id });
-            return ctx.send({ message: 'Entity deleted successfully' });
+            return ctx.send({ message: "Entity deleted successfully" });
         };
         this.bulkInsert = async (ctx) => {
             await this.database.bulkInsert(this.model, ctx.getBody());
-            return ctx.send({ message: 'Entities inserted successfully' });
+            return ctx.send({ message: "Entities inserted successfully" });
         };
         this.bulkUpdate = async (ctx) => {
             await this.database.bulkUpdate(this.model, ctx.getBody());
-            return ctx.send({ message: 'Entities updated successfully' });
+            return ctx.send({ message: "Entities updated successfully" });
         };
         this.bulkDelete = async (ctx) => {
             await this.database.bulkDelete(this.model, ctx.getBody());
-            return ctx.send({ message: 'Entities deleted successfully' });
+            return ctx.send({ message: "Entities deleted successfully" });
         };
         this.model = model;
         this.entity = entity_1.EntityManager.get(model);
+    }
+    async resolveEntityRelations(data) {
+        if (!data)
+            return data;
+        if (Array.isArray(data)) {
+            return Promise.all(data.map(item => this.entity.resolveRelations(item, this.database)));
+        }
+        return this.entity.resolveRelations(data, this.database);
     }
 }
 exports.ControllerCRUD = ControllerCRUD;
@@ -80312,6 +80331,7 @@ exports.Docs = Docs;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Entity = void 0;
+const _1 = __nccwpck_require__(87891);
 const utils_1 = __nccwpck_require__(78541);
 class Entity {
     constructor(entity) {
@@ -80319,6 +80339,7 @@ class Entity {
         this.name = entity.name;
         this.alias = entity.alias || (0, utils_1.capitalize)(entity.name);
         this.auth = entity.auth;
+        this.relationships = {};
         for (const key in entity.fields) {
             const field = entity.fields[key];
             if (typeof field === 'string') {
@@ -80329,13 +80350,21 @@ class Entity {
                 };
             }
             else {
-                this.fields[key] = {
-                    type: field.type,
-                    required: field.required,
-                    secure: field.secure,
-                };
+                this.fields[key] = Object.assign({}, field);
             }
+            if (this.fields[key].type === 'entity')
+                this.relationships[key] = _1.EntityManager.get(this.fields[key].entity);
         }
+    }
+    async resolveRelations(data, db) {
+        const resolvedData = Object.assign({}, data);
+        for (const [field, relatedEntity] of Object.entries(this.relationships)) {
+            if (data[field])
+                resolvedData[field] = await db.get(relatedEntity.name, { id: data[field] });
+            if (resolvedData[field].length === 1)
+                resolvedData[field] = resolvedData[field].pop();
+        }
+        return resolvedData;
     }
     parse(data) {
         const parsedData = {};
@@ -80356,24 +80385,31 @@ class Entity {
                 securedData[key] = data[key];
         return securedData;
     }
-    validate(data) {
+    validate(data, force = true) {
         const errors = [];
         for (const fieldName in this.fields) {
             const fieldConfig = this.fields[fieldName];
             const value = data[fieldName];
-            if (fieldConfig.required && (value === undefined || value === null)) {
-                errors.push(`Campo obrigatório '${fieldName}' está ausente.`);
+            if (force && fieldConfig.required && (value === undefined || value === null)) {
+                errors.push(`Missing required field: '${fieldName}'.`);
                 continue;
             }
-            if (value !== undefined && typeof value !== fieldConfig.type)
-                errors.push(`Campo '${fieldName}' deve ser do tipo '${fieldConfig.type}', mas recebeu '${typeof value}'.`);
+            if (value !== undefined && typeof value !== fieldConfig.type) {
+                let type = fieldConfig.type;
+                if (['file', 'entity'].includes(fieldConfig.type)) {
+                    type = 'string';
+                    if (['string', 'number'].includes(typeof value))
+                        continue;
+                }
+                errors.push(`Field '${fieldName}' must be of type '${type}', but received '${typeof value}'.`);
+            }
             if (fieldConfig.secure && typeof value === "string")
                 if (value.length === 0)
-                    errors.push(`Campo '${fieldName}' deve ser uma string segura (não vazia).`);
+                    errors.push(`Field '${fieldName}' must be a secure string (non-empty).`);
         }
         for (const key in data)
             if (!this.fields[key])
-                errors.push(`Campo '${key}' não está definido no esquema da entidade.`);
+                errors.push(`Field '${key}' is not defined in the entity schema.`);
         const valid = errors.length === 0;
         return { valid, errors };
     }
@@ -80575,7 +80611,7 @@ const __1 = __nccwpck_require__(76688);
 class JWTAuth {
     // POST /system/auth
     static async login(ctx) {
-        const { secret, expiresIn, refreshExpiresIn, entity: { name, identifiers } } = __1.Auth.getStrategy('jwt');
+        const { secret, refreshToken, entity: { name, identifiers } } = __1.Auth.getStrategy('jwt');
         const database = databases_1.Database.get(ctx.getInfo().database);
         const body = identifiers.reduce((obj, key) => {
             obj[key] = ctx.getBody()[key];
@@ -80585,14 +80621,16 @@ class JWTAuth {
         if (!entity)
             return ctx.status(401).error(new Error('Invalid credentials'));
         const payload = { entity: name, [name]: entity };
-        const tokens = Utils.generateTokens(payload, secret, expiresIn, refreshExpiresIn);
-        await Utils.saveAuthDetails(database, entity.id, 'jwt', '', tokens, expiresIn, refreshExpiresIn);
+        const tokens = Utils.generateTokens(payload, secret, refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.expiration);
+        if (!(refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.enabled))
+            delete tokens.refreshToken;
+        await Utils.saveAuthDetails(database, entity.id, 'jwt', '', tokens, refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.expiration);
         return ctx.send({ message: 'Login successful', auth: tokens });
     }
     // POST /system/auth/refresh
     static async refreshToken(ctx) {
         var _a;
-        const { secret, expiresIn, refreshExpiresIn, entity: { name } } = __1.Auth.getStrategy("jwt");
+        const { secret, refreshToken, entity: { name } } = __1.Auth.getStrategy("jwt");
         const database = databases_1.Database.get(ctx.getInfo().database);
         const oldRefreshToken = (_a = ctx.getHeader("Authorization")) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
         if (!oldRefreshToken)
@@ -80602,7 +80640,7 @@ class JWTAuth {
             const [user] = await database.get(name, { id: decoded.id });
             if (!user)
                 return ctx.status(401).error(new Error("Invalid user"));
-            const tokens = Utils.generateTokens(user, secret, expiresIn, refreshExpiresIn);
+            const tokens = Utils.generateTokens(user, secret, refreshToken.expiration);
             return ctx.send({ message: "Token refreshed successfully", auth: tokens });
         }
         catch (_b) {
@@ -80681,15 +80719,17 @@ class OAuth {
         const info = await fetcher_1.fetcher.get('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { Authorization: `Bearer ${provider.access_token}` },
         });
-        const { clientSecret, refreshToken: { expiration }, entity: { identifier, mapper, name } } = strategy;
+        const { clientSecret, refreshToken, entity: { identifier, mapper, name } } = strategy;
         const mappedUser = Object.keys(mapper).reduce((obj, key) => {
             obj[mapper[key]] = info[key];
             return obj;
         }, {});
         const entity = await Utils.ensureUserExists(database, name, identifier, mappedUser);
         const payload = { entity: name, [name]: entity };
-        const tokens = Utils.generateTokens(payload, clientSecret, expiration);
-        await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, expiration);
+        const tokens = Utils.generateTokens(payload, clientSecret, refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.expiration);
+        if (!(refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.enabled))
+            delete tokens.refreshToken;
+        await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, refreshToken === null || refreshToken === void 0 ? void 0 : refreshToken.expiration);
         return ctx.send({ message: 'Entity authenticated', entity, auth: tokens });
     }
 }
@@ -80709,8 +80749,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ensureUserExists = exports.saveAuthDetails = exports.validateToken = exports.generateTokens = void 0;
 const jsonwebtoken_1 = __importDefault(__nccwpck_require__(69653));
-const DEFAULT_REFRESH_EXPIRES_IN = 60 * 60; // 1 hour
-const DEFAULT_EXPIRES_IN = 60 * 30; // 30 minutes
+const DEFAULT_REFRESH_EXPIRES_IN = '10d';
+const DEFAULT_EXPIRES_IN = '12h';
 const generateTokens = (payload, secret, expiresIn = DEFAULT_EXPIRES_IN, refreshExpiresIn = DEFAULT_REFRESH_EXPIRES_IN) => {
     const accessToken = jsonwebtoken_1.default.sign(payload, secret, { expiresIn });
     const refreshToken = jsonwebtoken_1.default.sign(payload, secret, { expiresIn: refreshExpiresIn });
@@ -80770,7 +80810,8 @@ const METHODS_TO_ACTIONS = {
 class Authorization {
     static middleware(ctx) {
         var _a, _b;
-        const { url, method, session } = ctx.getInfo();
+        const { url, method: _method, session } = ctx.getInfo();
+        const method = _method.toLowerCase();
         const entities = entity_1.EntityManager.list();
         const isWhitelisted = WHITELIST.some((path) => url.includes(path));
         if (isWhitelisted)
@@ -80778,16 +80819,18 @@ class Authorization {
         const entity = Array.from(entities).find((path) => url.includes(path));
         if (entity) {
             const defaultPermissions = __1.Auth.getPermission('default');
-            const isAuthorized = ((_a = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions['*']) === null || _a === void 0 ? void 0 : _a[method.toLowerCase()]) || ((_b = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[entity]) === null || _b === void 0 ? void 0 : _b[method.toLowerCase()]);
+            const isAuthorized = ((_a = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions['*']) === null || _a === void 0 ? void 0 : _a[method]) || ((_b = defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[entity]) === null || _b === void 0 ? void 0 : _b[method]);
             if (isAuthorized)
                 return;
             if (session.entity) {
                 const permissions = __1.Auth.getPermission(session.entity);
-                const hasPermission = Object.keys(permissions).some((key) => {
-                    if (url.includes(key) || key === '*')
-                        return METHODS_TO_ACTIONS[method.toLowerCase()].some((action) => permissions[key][action]);
+                const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => { var _a; return ((_a = permissions === null || permissions === void 0 ? void 0 : permissions['*']) === null || _a === void 0 ? void 0 : _a[action]) || (permissions === null || permissions === void 0 ? void 0 : permissions[action]); });
+                const hasEntityPermission = Object.keys(permissions).some((key) => {
+                    if (url.includes(key) && key !== '*')
+                        return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action]);
+                    return false;
                 });
-                if (hasPermission)
+                if (hasGobalPermission || hasEntityPermission)
                     return;
             }
         }
@@ -80831,10 +80874,11 @@ class Auth {
         return Auth.instance.config.strategies[key];
     }
     static getPermission(key) {
+        var _a;
         if (!Auth.instance)
             throw new Error(`AuthConfig not initialized. Call Auth.initialize(entities) first.`);
         const { permissions } = Auth.instance.config;
-        const permission = permissions[key] || permissions.entities[key];
+        const permission = (permissions === null || permissions === void 0 ? void 0 : permissions[key]) || ((_a = permissions === null || permissions === void 0 ? void 0 : permissions.entities) === null || _a === void 0 ? void 0 : _a[key]);
         if (permission)
             return permission;
         return permissions.default;
@@ -80918,7 +80962,7 @@ const logger_1 = __nccwpck_require__(7893);
 const auth_1 = __nccwpck_require__(76688);
 const path_1 = __importDefault(__nccwpck_require__(16928));
 const logger = new logger_1.Logger();
-__exportStar(__nccwpck_require__(31569), exports);
+__exportStar(__nccwpck_require__(38522), exports);
 class QuickServer {
     constructor(filePath = path_1.default.join(process.cwd(), 'SERVER.yaml')) {
         this.middlewares = [];
@@ -80951,6 +80995,89 @@ exports.QuickServer = QuickServer;
 
 /***/ }),
 
+/***/ 63471:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FileServer = void 0;
+const http_1 = __nccwpck_require__(81397);
+const fs = __importStar(__nccwpck_require__(79896));
+const path = __importStar(__nccwpck_require__(16928));
+class FileServer {
+    constructor(config) {
+        const server = new http_1.HTTPServer({
+            name: config.name,
+            port: config.port,
+            request: config.request,
+            type: config.type,
+        });
+        server.get('*', (ctx) => {
+            const { pathname: urlPath } = new URL(ctx.request.url, `http://${ctx.request.headers.host}`);
+            const requestedFilePath = path.join(process.cwd(), config.path, urlPath);
+            if (!fs.existsSync(requestedFilePath))
+                return ctx.error(new Error('File not found'));
+            const extname = path.extname(requestedFilePath).toLowerCase();
+            let contentType = 'application/octet-stream';
+            switch (extname) {
+                case '.html':
+                    contentType = 'text/html';
+                    break;
+                case '.css':
+                    contentType = 'text/css';
+                    break;
+                case '.js':
+                    contentType = 'application/javascript';
+                    break;
+                case '.json':
+                    contentType = 'application/json';
+                    break;
+                case '.png':
+                    contentType = 'image/png';
+                    break;
+                case '.jpg':
+                case '.jpeg':
+                    contentType = 'image/jpeg';
+                    break;
+                case '.gif':
+                    contentType = 'image/gif';
+                    break;
+            }
+            ctx.response.setHeader('Content-Type', contentType);
+            return fs.createReadStream(requestedFilePath).pipe(ctx.response);
+        });
+        return server;
+    }
+}
+exports.FileServer = FileServer;
+
+
+/***/ }),
+
 /***/ 81397:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -80970,13 +81097,13 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.HTTPServer = void 0;
 const utils_1 = __nccwpck_require__(40956);
+const utils_2 = __nccwpck_require__(78541);
 const databases_1 = __nccwpck_require__(14714);
-const utils_2 = __nccwpck_require__(29457);
-const types_1 = __nccwpck_require__(31569);
+const utils_3 = __nccwpck_require__(29457);
+const types_1 = __nccwpck_require__(38522);
 const http_1 = __nccwpck_require__(58611);
 const logger_1 = __nccwpck_require__(7893);
 const url_1 = __nccwpck_require__(87016);
-const utils_3 = __nccwpck_require__(78541);
 const logger = new logger_1.Logger('http-server');
 const ContentTypes = {
     yaml: 'application/x-yaml',
@@ -81025,7 +81152,7 @@ class HTTPServer {
                         throw new Error('ctx.send(data): data cannot be undefined');
                     if (!res.statusCode)
                         res.statusCode = 200;
-                    const payload = (0, utils_2.parseResponse)(this.config.format, data);
+                    const payload = (0, utils_3.parseResponse)(this.config.format, data);
                     logger.info(`Response for Incoming Request ${req.url}`, { payload });
                     return res.end(payload);
                 },
@@ -81041,7 +81168,7 @@ class HTTPServer {
                 },
             };
             const timeoutPromise = new Promise(async (resolve, reject) => {
-                await (0, utils_3.sleep)(this.config.request.timeout);
+                await (0, utils_2.sleep)(this.config.request.timeout);
                 if (res.writableEnded)
                     resolve(false);
                 reject(new Error(`Request timeout exceeded (${this.config.request.timeout}ms)`));
@@ -81052,13 +81179,13 @@ class HTTPServer {
                     for (const mw of this.middlewares) {
                         if (res.writableEnded)
                             return resolve(false);
-                        await (0, utils_3.promisify)(mw(ctx));
+                        await (0, utils_2.promisify)(mw(ctx));
                     }
                     if (!route)
                         return reject(new Error('Not Found'));
                     if (res.writableEnded)
                         return resolve(false);
-                    await (0, utils_3.promisify)(route(ctx));
+                    await (0, utils_2.promisify)(route(ctx));
                 }
                 catch (error) {
                     if (res.writableEnded)
@@ -81157,7 +81284,7 @@ class HTTPServer {
         });
         server.listen(this.config.port, () => {
             logger.setOrigin(this.config.name);
-            logger.log(`Rest server running on port ${this.config.port}`);
+            logger.log(`${(0, utils_2.capitalize)(this.config.type)} server running on port ${this.config.port}`);
         });
     }
 }
@@ -81279,7 +81406,7 @@ function findRoute(pathname, method, routes) {
     for (const route of Object.keys(routes)) {
         const routeParts = route.split('/');
         const pathParts = pathname.split('/');
-        if (routeParts.length > pathParts.length)
+        if (routeParts.length !== pathParts.length)
             continue;
         let isMatch = true;
         const params = {};
@@ -81334,6 +81461,7 @@ const http_1 = __nccwpck_require__(81397);
 Object.defineProperty(exports, "HTTPServer", ({ enumerable: true, get: function () { return http_1.HTTPServer; } }));
 const authentication_1 = __nccwpck_require__(55269);
 const authorization_1 = __nccwpck_require__(46430);
+const file_1 = __nccwpck_require__(63471);
 const search_1 = __nccwpck_require__(38269);
 const logger_1 = __nccwpck_require__(7893);
 const crud_1 = __nccwpck_require__(45488);
@@ -81350,6 +81478,9 @@ class Server {
                     break;
                 case 'socket':
                     this.servers.set(server.name, new socket_1.SocketServer(server));
+                    break;
+                case 'file':
+                    this.servers.set(server.name, new file_1.FileServer(server));
                     break;
                 default:
                     break;
@@ -81610,88 +81741,7 @@ function parseResponse(format, data) {
 
 /***/ }),
 
-/***/ 78939:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AuthConfig = void 0;
-class AuthConfig {
-    constructor(parameters = {}) {
-        var _a, _b;
-        this.strategies = parameters.strategies;
-        this.permissions = {
-            entities: ((_a = parameters.permissions) === null || _a === void 0 ? void 0 : _a.entities) || {},
-            default: Object.assign({ get: true, list: true, insert: true, update: true, delete: true }, (((_b = parameters.permissions) === null || _b === void 0 ? void 0 : _b.default) || {})),
-        };
-    }
-}
-exports.AuthConfig = AuthConfig;
-
-
-/***/ }),
-
-/***/ 14272:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 46255:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 52598:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 31569:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(46255), exports);
-__exportStar(__nccwpck_require__(14272), exports);
-__exportStar(__nccwpck_require__(52598), exports);
-__exportStar(__nccwpck_require__(16174), exports);
-__exportStar(__nccwpck_require__(78939), exports);
-
-
-/***/ }),
-
-/***/ 16174:
+/***/ 38522:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -81700,19 +81750,18 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ServerConfig = void 0;
 class ServerConfig {
     constructor(parameters) {
-        this.request = {
-            timeout: 1000 * 60, // default: 60 segundos
-            limit: 10,
-        };
+        var _a, _b;
         for (const key in parameters)
             this[key] = parameters[key];
         if (typeof this.format === 'undefined')
             this.format = 'json';
         if (typeof this.type === 'undefined')
             this.type = 'rest';
-        if (typeof this.request.limit === 'undefined')
+        if (typeof this.request === 'undefined')
+            this.request = { limit: 10, timeout: 1000 * 60 };
+        if (typeof ((_a = this.request) === null || _a === void 0 ? void 0 : _a.limit) === 'undefined')
             this.request.limit = 10;
-        if (typeof this.request.timeout === 'undefined')
+        if (typeof ((_b = this.request) === null || _b === void 0 ? void 0 : _b.timeout) === 'undefined')
             this.request.timeout = 1000 * 60;
         else
             this.request.timeout *= 1000;
@@ -81942,7 +81991,10 @@ class Logger {
         })(), { message } = _a, data = __rest(_a, ["message"]);
         const hasData = Object.keys(data).length > 0;
         const breakLine = (exports.config === null || exports.config === void 0 ? void 0 : exports.config.formatted) && hasData ? '\n' : ' ';
-        console.log(`${prefix}: ${[message, breakLine, this.parse(data)].join('')}`);
+        let content = `${prefix}: ${[message, breakLine, this.parse(data)].join('')}`;
+        if (raw instanceof Error)
+            content = `${content}\n${raw.stack}`;
+        console.log(content);
     }
     log(message, meta = {}) {
         this.write('log', message, meta);

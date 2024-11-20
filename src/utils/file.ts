@@ -46,8 +46,7 @@ const loadEnv = (filePath = '.env') => {
   try {
     const envPath = path.resolve(process.cwd(), filePath);
     
-    if (!fs.existsSync(envPath))
-      throw new Error(`File "${filePath}" not found at ${envPath}`);
+    if (!fs.existsSync(envPath)) return;
 
     const raw = fs.readFileSync(envPath, 'utf8');
     const regex = /^\s*([\w.-]+)\s*=\s*(.+)?$/;

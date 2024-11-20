@@ -18,31 +18,28 @@ export class Authorization {
     const method = methodUpperCase.toLowerCase();
     const entities = EntityManager.list();
 
-
     if (server.config.type === 'file' && !server.config.secure) return;
 
     const isWhitelisted = WHITELIST.some((path) => url.includes(path));
     if (isWhitelisted) return;
 
     const entity = Array.from(entities).find((path) => url.includes(path)); 
-    if (entity) {
-      const defaultPermissions = Auth.getPermission('default');
-      const isAuthorized = defaultPermissions?.['*']?.[method] || defaultPermissions?.[entity]?.[method];
+    const defaultPermissions = Auth.getPermission('default');
+    const isAuthorized = defaultPermissions?.['*']?.[method] || defaultPermissions?.[entity]?.[method];
+    
+    if (isAuthorized) return;
+
+    if (session.entity) {
+      const permissions = Auth.getPermission(session.entity);
+      const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => permissions?.['*']?.[action] || permissions?.[action]);
+      const hasEntityPermission = Object.keys(permissions).some((key) => {
+        if (url.includes(key) && key !== '*')
+          return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action])
+
+        return false;
+      });
       
-      if (isAuthorized) return;
-
-      if (session.entity) {
-        const permissions = Auth.getPermission(session.entity);
-        const hasGobalPermission = METHODS_TO_ACTIONS[method].some((action) => permissions?.['*']?.[action] || permissions?.[action]);
-        const hasEntityPermission = Object.keys(permissions).some((key) => {
-          if (url.includes(key) && key !== '*')
-            return METHODS_TO_ACTIONS[method].some((action) => permissions[key][action])
-
-          return false;
-        });
-        
-        if (hasGobalPermission || hasEntityPermission) return;
-      }
+      if (hasGobalPermission || hasEntityPermission) return;
     }
 
     return ctx

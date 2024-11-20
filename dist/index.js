@@ -80798,6 +80798,7 @@ exports.ensureUserExists = ensureUserExists;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Authorization = void 0;
 const entity_1 = __nccwpck_require__(87891);
+const servers_1 = __nccwpck_require__(34388);
 const __1 = __nccwpck_require__(76688);
 const WHITELIST = ['system', 'auth'];
 const METHODS_TO_ACTIONS = {
@@ -80810,9 +80811,12 @@ const METHODS_TO_ACTIONS = {
 class Authorization {
     static middleware(ctx) {
         var _a, _b;
-        const { url, method: _method, session } = ctx.getInfo();
-        const method = _method.toLowerCase();
+        const { url, method: methodUpperCase, session, server: serverName } = ctx.getInfo();
+        const server = servers_1.Server.get(serverName);
+        const method = methodUpperCase.toLowerCase();
         const entities = entity_1.EntityManager.list();
+        if (server.config.type === 'file' && !server.config.secure)
+            return;
         const isWhitelisted = WHITELIST.some((path) => url.includes(path));
         if (isWhitelisted)
             return;
@@ -81763,6 +81767,8 @@ class ServerConfig {
             this.request.limit = 10;
         if (typeof ((_b = this.request) === null || _b === void 0 ? void 0 : _b.timeout) === 'undefined')
             this.request.timeout = 1000 * 60;
+        if (typeof this.secure === 'undefined')
+            this.secure = false;
         else
             this.request.timeout *= 1000;
     }

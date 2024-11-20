@@ -55,18 +55,20 @@ export interface ServerConfigParams {
     type: 'rest' | 'socket' | 'file';
     format?: 'json' | 'csv' | 'xml' | 'html' | 'yaml';
     database?: string;
+    secure?: boolean;
     request?: {
         limit: number;
         timeout: number;
     };
 }
 export declare class ServerConfig implements ServerConfigParams {
-    name: string;
-    port: number;
+    name: ServerConfigParams['name'];
+    port: ServerConfigParams['port'];
     type: ServerConfigParams['type'];
     format?: ServerConfigParams['format'];
-    database?: string;
+    database?: ServerConfigParams['database'];
     path?: string;
+    secure?: ServerConfigParams['secure'];
     request: ServerConfigParams['request'];
     constructor(parameters: ServerConfigParams);
 }

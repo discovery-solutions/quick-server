@@ -7,9 +7,9 @@ export { SocketContext };
 export declare class SocketServer {
     private routes;
     private middlewares;
-    private config;
     private logger;
     database: DatabaseInterface;
+    config: ServerConfig;
     constructor(config: ServerConfig);
     use(middleware: Middleware): void;
     apply(callback: (instance: SocketServer) => any): any;

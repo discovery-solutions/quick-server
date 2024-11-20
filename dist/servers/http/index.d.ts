@@ -6,9 +6,9 @@ export { HTTPContext };
 export declare class HTTPServer {
     private routes;
     private middlewares;
-    private config;
     private basePath;
     database: DatabaseInterface;
+    config: ServerConfig;
     constructor(config: ServerConfig);
     apply(callback: (instance: HTTPServer) => any): any;
     use(middleware: Middleware): void;

@@ -1,6 +1,6 @@
 import { IncomingHttpHeaders } from 'http';
-import { HTTPServer } from './http';
 import { SocketServer } from './socket';
+import { HTTPServer } from './http';
 export type Middleware = (ctx: Context) => any;
 export type RequestParams = {
     [key: string]: string | string[] | undefined;

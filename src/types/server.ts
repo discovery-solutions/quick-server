@@ -1,3 +1,4 @@
+const DEFAULT_REQUEST = { limit: 10, timeout: 1000 * 60 };
 
 export interface ServerConfigParams {
   name: string;
@@ -20,10 +21,7 @@ export class ServerConfig implements ServerConfigParams {
   database?: ServerConfigParams['database'];
   path?: string;
   secure?: ServerConfigParams['secure'];
-  request: ServerConfigParams['request'] = {
-    timeout: 1000 * 60, // default: 60 segundos
-    limit: 10,
-  };
+  request: ServerConfigParams['request'];
   
   constructor(parameters: ServerConfigParams) {
     for (const key in parameters)
@@ -32,8 +30,9 @@ export class ServerConfig implements ServerConfigParams {
     if (typeof this.format === 'undefined') this.format = 'json';
     if (typeof this.type === 'undefined') this.type = 'rest';
 
-    if (typeof this.request.limit === 'undefined') this.request.limit = 10;
-    if (typeof this.request.timeout === 'undefined') this.request.timeout = 1000 * 60;
+    if (typeof this.request === 'undefined') this.request = DEFAULT_REQUEST;
+    if (typeof this.request.limit === 'undefined') this.request.limit = DEFAULT_REQUEST.limit;
+    if (typeof this.request.timeout === 'undefined') this.request.timeout = DEFAULT_REQUEST.timeout;
     else this.request.timeout *= 1000;
   }
 }

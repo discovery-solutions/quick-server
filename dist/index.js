@@ -81834,22 +81834,21 @@ __exportStar(__nccwpck_require__(78939), exports);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ServerConfig = void 0;
+const DEFAULT_REQUEST = { limit: 10, timeout: 1000 * 60 };
 class ServerConfig {
     constructor(parameters) {
-        this.request = {
-            timeout: 1000 * 60, // default: 60 segundos
-            limit: 10,
-        };
         for (const key in parameters)
             this[key] = parameters[key];
         if (typeof this.format === 'undefined')
             this.format = 'json';
         if (typeof this.type === 'undefined')
             this.type = 'rest';
+        if (typeof this.request === 'undefined')
+            this.request = DEFAULT_REQUEST;
         if (typeof this.request.limit === 'undefined')
-            this.request.limit = 10;
+            this.request.limit = DEFAULT_REQUEST.limit;
         if (typeof this.request.timeout === 'undefined')
-            this.request.timeout = 1000 * 60;
+            this.request.timeout = DEFAULT_REQUEST.timeout;
         else
             this.request.timeout *= 1000;
     }

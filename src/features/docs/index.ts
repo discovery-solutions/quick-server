@@ -281,7 +281,7 @@ export class Docs {
       });
 
       server.get('/system/docs/*', (ctx: HTTPContext) => {
-        const file = path.join(__dirname, 'www', 'index.html');
+        const file = path.join(__dirname, 'features/docs/www', 'index.html');
         
         ctx.response.setHeader('Content-Type', 'text/html');
         return fs.createReadStream(file).pipe(ctx.response);

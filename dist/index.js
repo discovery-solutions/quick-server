@@ -80311,7 +80311,7 @@ class Docs {
                 return ctx.send(Docs.generate());
             });
             server.get('/system/docs/*', (ctx) => {
-                const file = path_1.default.join(__dirname, 'www', 'index.html');
+                const file = path_1.default.join(__dirname, 'features/docs/www', 'index.html');
                 ctx.response.setHeader('Content-Type', 'text/html');
                 return fs_1.default.createReadStream(file).pipe(ctx.response);
             });

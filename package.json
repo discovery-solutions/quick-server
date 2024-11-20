@@ -7,9 +7,10 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "release": "standard-version && git push --follow-tags origin main",
-    "build": "rimraf dist && npx ncc build src/index.ts -o dist",
+    "build": "rimraf dist && npx ncc build src/index.ts -o dist && npm run copy-assets",
     "test": "npm run build && clear && node --experimental-modules ./test/index.mjs",
     "dev": "nodemon",
+    "copy-assets": "cpx \"src/**/*.{html,css,js}\" dist",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.3",
+    "cpx": "^1.5.0",
     "nodemon": "^3.1.7",
     "standard-version": "9.5.0",
     "ts-node": "^10.9.2",
@@ -55,7 +57,7 @@
       "EXAMPLE.yaml",
       "SERVER.yaml"
     ],
-    "exec": "clear && node -r tsconfig-paths/register -r ts-node/register ./src/dev.ts",
+    "exec": "clear && node ./dev/index.mjs",
     "ext": "ts, js, html, css"
   }
 }

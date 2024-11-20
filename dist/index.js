@@ -79201,10 +79201,9 @@ class ControllerCRUD {
     async resolveEntityRelations(data) {
         if (!data)
             return data;
-        if (Array.isArray(data)) {
-            return Promise.all(data.map(item => this.entity.resolveRelations(item, this.database)));
-        }
-        return this.entity.resolveRelations(data, this.database);
+        if (!Array.isArray(data))
+            return await this.entity.resolveRelations(data, this.database);
+        return await Promise.all(data.map(item => this.entity.resolveRelations(item, this.database)));
     }
 }
 exports.ControllerCRUD = ControllerCRUD;
@@ -80361,6 +80360,7 @@ class Entity {
         for (const [field, relatedEntity] of Object.entries(this.relationships)) {
             if (data[field])
                 resolvedData[field] = await db.get(relatedEntity.name, { id: data[field] });
+            console.log(field, resolvedData[field], data[field]);
             if (resolvedData[field].length === 1)
                 resolvedData[field] = resolvedData[field].pop();
         }
@@ -80821,7 +80821,6 @@ class Authorization {
             return;
         const defaultPermissions = __1.Auth.getPermission('default');
         const isAuthorized = METHODS_TO_ACTIONS[method].some((action) => defaultPermissions === null || defaultPermissions === void 0 ? void 0 : defaultPermissions[action]);
-        console.log(defaultPermissions, isAuthorized);
         if (isAuthorized)
             return;
         if (session.entity) {

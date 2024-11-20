@@ -18,10 +18,11 @@ export class ControllerCRUD {
 
   private async resolveEntityRelations(data: any | any[]) {
     if (!data) return data;
-    if (Array.isArray(data)) {
-      return Promise.all(data.map(item => this.entity.resolveRelations(item, this.database)));
-    }
-    return this.entity.resolveRelations(data, this.database);
+
+    if (!Array.isArray(data))
+      return await this.entity.resolveRelations(data, this.database);
+      
+    return await Promise.all(data.map(item => this.entity.resolveRelations(item, this.database)));
   }
 
   list = async (ctx: HTTPContext | SocketContext) => {

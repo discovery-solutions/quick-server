@@ -26,8 +26,6 @@ export class Authorization {
     const defaultPermissions = Auth.getPermission('default');
     const isAuthorized = METHODS_TO_ACTIONS[method].some((action) => defaultPermissions?.[action]);
 
-    console.log(defaultPermissions, isAuthorized);
-    
     if (isAuthorized) return;
 
     if (session.entity) {

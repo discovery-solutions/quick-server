@@ -34,7 +34,7 @@ export class InMemoryDB implements DatabaseInterface {
     return dataToInsert.id;
   }
 
-  async get<T>(table: string, query: object): Promise<T[]> {
+  async get<T>(table: string, query: object = {}): Promise<T[]> {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const data = this.db[table] || [];
     const result = data.filter(item => {

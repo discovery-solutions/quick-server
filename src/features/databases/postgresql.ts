@@ -24,7 +24,7 @@ export class PostgresDb implements DatabaseInterface {
     return rows[0].id;
   }
 
-  async get<T>(table: string, query: object): Promise<T[]> {
+  async get<T>(table: string, query: object = {}): Promise<T[]> {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const keys = Object.keys(query);
     const values = Object.values(query);

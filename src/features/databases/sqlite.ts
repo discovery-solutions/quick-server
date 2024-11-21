@@ -45,7 +45,7 @@ export class SqliteDB implements DatabaseInterface {
     }
   }
 
-  async get<T>(table: string, query: object): Promise<T[]> {
+  async get<T>(table: string, query: object = {}): Promise<T[]> {
     const conditions = Object.keys(query)
       .map((key) => `${key} = ?`)
       .join(' AND ');

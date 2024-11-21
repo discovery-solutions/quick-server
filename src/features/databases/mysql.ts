@@ -29,7 +29,7 @@ export class MySqlDB implements DatabaseInterface {
     return result[0].insertId;
   }
 
-  async get<T>(table: string, query: object): Promise<T[]> {
+  async get<T>(table: string, query: object = {}): Promise<T[]> {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const [_, rows] = await this.connection.execute(
       `SELECT * FROM ${table} WHERE ?`, 

@@ -79292,7 +79292,7 @@ class InMemoryDB {
         this.logger.log(`Insert completed!`);
         return dataToInsert.id;
     }
-    async get(table, query) {
+    async get(table, query = {}) {
         this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
         const data = this.db[table] || [];
         const result = data.filter(item => {
@@ -79476,7 +79476,7 @@ class MongoDB {
         this.db = client.db(dbName);
         this.logger.log(`Connected to MongoDB database: "${dbName}"`);
     }
-    parseQuery(query) {
+    parseQuery(query = {}) {
         if (query.id) {
             query._id = new mongodb_1.ObjectId(String(query.id));
             delete query.id;
@@ -79520,7 +79520,7 @@ class MongoDB {
         this.logger.log(`Record inserted into table "${table}".`);
         return res.insertedId.toString();
     }
-    async get(table, query) {
+    async get(table, query = {}) {
         this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
         const collection = this.db.collection(table);
         const result = await collection.find(this.parseQuery(query)).toArray();
@@ -79533,7 +79533,7 @@ class MongoDB {
         const result = await collection.updateOne(this.parseQuery(query), { $set: this.addTimestamps(data) });
         this.logger.log(`Matched ${result.matchedCount} record(s) and modified ${result.modifiedCount} record(s) in table "${table}".`);
     }
-    async delete(table, query) {
+    async delete(table, query = {}) {
         this.logger.log(`Deleting records from table "${table}" with query: ${JSON.stringify(query)}`);
         const collection = this.db.collection(table);
         const result = await collection.deleteOne(this.parseQuery(query));
@@ -79628,7 +79628,7 @@ class MySqlDB {
         this.logger.log(`Record inserted into table "${table}". Result: ${JSON.stringify(result)}`);
         return result[0].insertId;
     }
-    async get(table, query) {
+    async get(table, query = {}) {
         this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
         const [_, rows] = await this.connection.execute(`SELECT * FROM ${table} WHERE ?`, [query]);
         this.logger.log(`Fetched ${rows.length} record(s) from table "${table}".`);
@@ -79733,7 +79733,7 @@ class PostgresDb {
         this.logger.log(`Record inserted into table "${table}". Data: ${JSON.stringify(data)}`);
         return rows[0].id;
     }
-    async get(table, query) {
+    async get(table, query = {}) {
         this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
         const keys = Object.keys(query);
         const values = Object.values(query);
@@ -79880,7 +79880,7 @@ class SqliteDB {
             throw err;
         }
     }
-    async get(table, query) {
+    async get(table, query = {}) {
         const conditions = Object.keys(query)
             .map((key) => `${key} = ?`)
             .join(' AND ');

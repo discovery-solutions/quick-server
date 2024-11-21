@@ -14,7 +14,7 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Connected to MongoDB database: "${dbName}"`);
   }
 
-  private parseQuery(query: Record<string, any>) {
+  private parseQuery(query: Record<string, any> = {}) {
     if (query.id) {
       query._id = new ObjectId(String(query.id));
       delete query.id;
@@ -73,7 +73,7 @@ export class MongoDB implements DatabaseInterface {
     return res.insertedId.toString();
   }
 
-  async get<T>(table: string, query: Record<string, any>): Promise<T[]> {
+  async get<T>(table: string, query: Record<string, any> = {}): Promise<T[]> {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
     const result = await collection.find(this.parseQuery(query)).toArray();
@@ -88,7 +88,7 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Matched ${result.matchedCount} record(s) and modified ${result.modifiedCount} record(s) in table "${table}".`);
   }
 
-  async delete(table: string, query: Record<string, any>): Promise<void> {
+  async delete(table: string, query: Record<string, any> = {}): Promise<void> {
     this.logger.log(`Deleting records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
     const result = await collection.deleteOne(this.parseQuery(query));

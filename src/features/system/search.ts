@@ -10,7 +10,7 @@ export class Search {
 }
 
 const handler = async (ctx: Context) => {
-  const { query } = ctx.getParams();
+  const { query: { query }} = ctx.getParams();
   const database = Database.get(ctx.getInfo().database);
   
   if (!query) return ctx.status(400).error(new Error('Missing query get parameter'));

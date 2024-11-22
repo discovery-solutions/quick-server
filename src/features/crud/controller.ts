@@ -26,7 +26,8 @@ export class ControllerCRUD {
   }
 
   list = async (ctx: HTTPContext | SocketContext) => {
-    const entities = await this.database.get(this.model, {});
+    const { query } = ctx.getParams();
+    const entities = await this.database.get(this.model, query);
     const resolvedEntities = await this.resolveEntityRelations(entities);
     return ctx.send(this.entity.secure(resolvedEntities));
   };

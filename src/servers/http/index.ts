@@ -94,7 +94,7 @@ export class HTTPServer {
     const method = req.method?.toLowerCase() || '';
     const params = {
       ...this.extractParams(pathname || ''),
-      ...query,
+      query,
     };
 
     res.setHeader('Content-Type', ContentTypes[this.config.format]);

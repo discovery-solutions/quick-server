@@ -10,7 +10,7 @@ export class Auth {
     if (Auth.instance) return ;
       
     Auth.instance = new Auth();
-    Auth.instance.config = config;
+    Auth.instance.config = new AuthConfig(config);
   }
 
   public static getStrategies() {
@@ -41,7 +41,7 @@ export class Auth {
     const permission = permissions?.[key] || permissions?.entities?.[key];
 
     if (permission) return permission;
-    return permissions.default;
+    return permissions?.default;
   }
 
 }

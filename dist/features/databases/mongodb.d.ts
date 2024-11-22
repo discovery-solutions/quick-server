@@ -3,10 +3,9 @@ export declare class MongoDB implements DatabaseInterface {
     private db;
     private logger;
     constructor(uri: string, dbName: string, logs?: boolean);
-    private parseQuery;
+    private parse;
     private addTimestamps;
     private transformResult;
-    private createTextIndexIfNotExists;
     insert<T>(table: string, data: T): Promise<string>;
     get<T>(table: string, query?: Record<string, any>): Promise<T[]>;
     update<T>(table: string, query: Record<string, any>, data: T): Promise<void>;

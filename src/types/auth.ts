@@ -70,7 +70,7 @@ export class AuthConfig implements AuthConfigParams {
         update: true,
         delete: true,
         search: true,
-        ...(parameters.permissions?.default || {}),
+        ...(parameters?.permissions?.default || {}),
       },
     }
   }

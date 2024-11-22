@@ -58,7 +58,7 @@
       "EXAMPLE.yaml",
       "SERVER.yaml"
     ],
-    "exec": "clear && node ./dev/index.mjs",
+    "exec": "clear && npm run build && node ./dev/index.mjs",
     "ext": "ts, js, html, css"
   }
 }

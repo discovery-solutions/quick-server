@@ -6,7 +6,7 @@ developer:
 
 servers:
   - name: "DevBlog-API"
-    port: 4000
+    port: 4001
     type: "rest"
     format: "json"
     database: "mongodb"
@@ -15,7 +15,7 @@ servers:
       timeout: 15           # quinze segundos
   - name: "DevBlog-FrontEnd"
     type: "file"
-    port: 3000
+    port: 3001
     path: "/test/www"
 
 auth:
@@ -29,28 +29,28 @@ auth:
           - "email"
           - "password"
 
-  permissions:
-    default:
-      get: true
-      list: true
-      search: true
-      insert: false
-      update: false
-      delete: false
-    entities:
-      user:
-        "*":
-          get: true
-          list: true
-          search: true
-          insert: true
-          update: true
-          delete: true
+  # permissions:
+  #   default:
+  #     get: true
+  #     list: true
+  #     search: true
+  #     insert: true
+  #     update: false
+  #     delete: false
+  #   entities:
+  #     user:
+  #       "*":
+  #         get: true
+  #         list: true
+  #         search: true
+  #         insert: true
+  #         update: true
+  #         delete: true
 
 databases:
   - type: mongodb
     key: "mongodb"
-    uri: "mongodb+srv://username:password@cluster.mongodb.net/devblog"
+    uri: "{MONGODB_URI}"
     name: "devblog_db"
     logs: true
 
@@ -95,9 +95,6 @@ entities:
       title:
         type: "string"
         required: true
-      date:
-        type: "date"
-        required: true
       content:
         type: "string"
         required: true
@@ -108,5 +105,8 @@ entities:
       category:
         type: "entity"
         entity: "category"
+        required: false
+      tags:
+        type: "object"
         required: false
 

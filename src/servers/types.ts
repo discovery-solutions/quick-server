@@ -5,7 +5,7 @@ import { HTTPServer } from './http';
 
 export type Middleware = (ctx: Context) => any;
 
-export type RequestParams = { [key: string]: string | string[] | undefined };
+export type RequestParams = { [key: string]: any };
 
 export interface Session extends Record<string, any> {
   entity?: string;

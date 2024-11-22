@@ -24,7 +24,6 @@ export class MongoDB implements DatabaseInterface {
       if (ObjectId.isValid(query[key]))
         query[key] = new ObjectId(String(query[key]));
 
-    console.log({ query })
     return query;
   }
 
@@ -65,7 +64,6 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
     const result = await collection.find(this.parse(query)).toArray();
-    console.log(table, result)
     this.logger.log(`Fetched ${result.length} record(s) from table "${table}".`);
     return this.transformResult(result) as T[];
   }

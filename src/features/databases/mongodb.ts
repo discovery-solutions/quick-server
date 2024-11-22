@@ -137,11 +137,10 @@ export class MongoDB implements DatabaseInterface {
   
       if (!entity) continue;
   
-      const fields = Object.keys(entity.fields).filter(key => entity.fields[key].type === 'string');
       const collection: Collection = this.db.collection(name);
       
       const result = await collection.find({
-        $or: fields.map(field => ({
+        $or: Object.keys(entity.fields).map(field => ({
           [field]: { $regex: query, $options: "i" },
         })),
       }).toArray();

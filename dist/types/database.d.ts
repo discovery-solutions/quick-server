@@ -1,5 +1,5 @@
 export interface DatabaseConfig {
-    type: 'in-memory' | 'mongodb' | 'mysql' | 'postgresql' | 'sqlite' | 'custom';
+    type: 'in-memory' | 'mongodb' | 'mysql' | 'postgresql' | 'sqlite' | 'custom' | 'firestore';
     logs?: boolean;
     key: string;
     host?: string;

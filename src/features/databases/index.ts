@@ -1,4 +1,5 @@
 import { Config } from '../../types';
+import { FirestoreDB } from './firestore';
 import { InMemoryDB } from './in-memory';
 import { MongoDB } from './mongodb';
 import { MySqlDB } from './mysql';
@@ -29,6 +30,9 @@ export class Database {
           break;
         case 'sqlite':
           this.databases.set(key, new SqliteDB(params.uri, logs));
+          break;
+        case 'firestore':
+          this.databases.set(key, new FirestoreDB(params.uri, logs));
           break;
         default:
           throw new Error(`Database type ${type} not supported`);

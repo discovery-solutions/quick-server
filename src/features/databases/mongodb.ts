@@ -1,7 +1,7 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import { DatabaseInterface } from './types';
-import { Logger } from '../../utils/logger';
 import { EntityManager } from '../entity';
+import { Logger } from '../../utils/logger';
 
 export class MongoDB implements DatabaseInterface {
   private db: Db;
@@ -15,8 +15,6 @@ export class MongoDB implements DatabaseInterface {
   }
 
   private parse(query: Record<string, any> = {}) {
-    const entities = Array.from(EntityManager.list());
-
     if (query.id) {
       query._id = query.id;
       delete query.id;
@@ -26,6 +24,7 @@ export class MongoDB implements DatabaseInterface {
       if (ObjectId.isValid(query[key]))
         query[key] = new ObjectId(String(query[key]));
 
+    console.log({ query })
     return query;
   }
 
@@ -66,6 +65,7 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Fetching records from table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
     const result = await collection.find(this.parse(query)).toArray();
+    console.log(table, result)
     this.logger.log(`Fetched ${result.length} record(s) from table "${table}".`);
     return this.transformResult(result) as T[];
   }
@@ -74,7 +74,6 @@ export class MongoDB implements DatabaseInterface {
     this.logger.log(`Updating records in table "${table}" with query: ${JSON.stringify(query)}`);
     const collection: Collection = this.db.collection(table);
     const result = await collection.updateOne(this.parse(query), { $set: this.addTimestamps(data) });
-    console.log(this.parse(query), { $set: this.addTimestamps(data) }, result)
     this.logger.log(`Matched ${result.matchedCount} record(s) and modified ${result.modifiedCount} record(s) in table "${table}".`);
   }
 

@@ -130,19 +130,22 @@ export class MongoDB implements DatabaseInterface {
     
     const collections = await this.db.listCollections().toArray();
     const results: Record<string, T[]> = {};
-
+  
     for (const { name } of collections) {
       const entity = EntityManager.get(name);
       this.logger.log(`Searching in collection: "${name}"`);
-
+  
       if (!entity) continue;
-
+  
       const fields = Object.keys(entity.fields).filter(key => entity.fields[key].type === 'string');
-      await this.createTextIndexIfNotExists(name, fields);
-
       const collection: Collection = this.db.collection(name);
-      const result = await collection.find({ $text: { $search: query } }).toArray();
-
+      
+      const result = await collection.find({
+        $or: fields.map(field => ({
+          [field]: { $regex: query, $options: "i" },
+        })),
+      }).toArray();
+  
       if (result.length > 0) {
         results[name] = result.map(item => {
           if (item._id) {
@@ -153,8 +156,8 @@ export class MongoDB implements DatabaseInterface {
         });
       }
     }
-
+  
     this.logger.log(`Global search completed. Found results in ${Object.keys(results).length} collection(s).`);
     return results;
-  }
+  }  
 }

@@ -17,6 +17,8 @@ export interface OAuthStrategy {
   clientSecret: string;
   authUrl: string;
   tokenUrl: string;
+  userInfoUrl: string;
+  scope?: string;
   entity: {
     name: string;
     identifier: string;
@@ -32,7 +34,11 @@ export interface AuthStrategies {
   jwt?: JWTStrategy;
   oauth?: {
     google?: OAuthStrategy;
+    github?: OAuthStrategy;
+    linkedin?: OAuthStrategy;
     facebook?: OAuthStrategy;
+    firebase?: OAuthStrategy;
+    [key: string]: OAuthStrategy;
   };
 }
 

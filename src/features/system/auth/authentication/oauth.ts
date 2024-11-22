@@ -11,13 +11,16 @@ export class OAuth {
     const { basePath } = ctx.getInfo();
     const client = String(ctx.getParams().client);
     const strategy = Auth.getStrategy('oauth', client) as OAuthStrategy;
-
+    
+    if (!strategy) return ctx.status(400).error(new Error('Invalid OAuth provider.'));
+    
     console.log('REDIRECT URI: ' + `${basePath}/system/oauth/callback/${client}`)
     const redirectUri = encodeURIComponent(`${basePath}/system/oauth/callback/${client}`);
-    const location = `${strategy.authUrl}?client_id=${strategy.clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile`;
+    const location = `${strategy.authUrl}?client_id=${strategy.clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${encodeURIComponent(strategy.scope || 'email profile')}`;
 
     return ctx.send({ location });
   }
+
 
   // GET /system/oauth/callback/:client
   static async callback(ctx: Context) {
@@ -25,6 +28,9 @@ export class OAuth {
     const { client, code } = ctx.getParams();
     const database = Database.get(ctx.getInfo().database);
     const strategy = Auth.getStrategy('oauth', String(client)) as OAuthStrategy;
+
+    if (!client || !code) return ctx.status(400).error(new Error('Missing required parameters.'));
+    if (!strategy) return ctx.status(400).error(new Error('Invalid OAuth provider.'));
 
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -34,30 +40,28 @@ export class OAuth {
       code: code as string,
     });
 
-    if (!client || !code) return ctx.status(400).error(new Error('Missing required parameters.'));
-
-    const provider = await fetcher.post(`${strategy.tokenUrl}?${params}`, {}, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    const provider = await fetcher.post(strategy.tokenUrl, params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
-    const info = await fetcher.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+    if (!provider.access_token) return ctx.status(400).error(new Error('Invalid access token.'));
+
+    const info = await fetcher.get(strategy.userInfoUrl, {
       headers: { Authorization: `Bearer ${provider.access_token}` },
     });
 
-    const { clientSecret, refreshToken, entity: { identifier, mapper, name }} = strategy;
-    const mappedUser = Object.keys(mapper).reduce((obj, key) => {
-      obj[mapper[key]] = info[key];
+    const mappedUser = Object.keys(strategy.entity.mapper).reduce((obj, key) => {
+      obj[strategy.entity.mapper[key]] = info[key];
       return obj;
     }, {});
 
-    const entity = await Utils.ensureUserExists(database, name, identifier, mappedUser);
-    const payload = { entity: name, [name]: entity };
+    const entity = await Utils.ensureUserExists(database, strategy.entity.name, strategy.entity.identifier, mappedUser);
+    const payload = { entity: strategy.entity.name, [strategy.entity.name]: entity };
 
-    const tokens = Utils.generateTokens(payload, clientSecret, refreshToken?.expiration);
-    
-    if (!refreshToken?.enabled) delete tokens.refreshToken;
+    const tokens = Utils.generateTokens(payload, strategy.clientSecret, strategy.refreshToken?.expiration);
+    if (!strategy.refreshToken?.enabled) delete tokens.refreshToken;
 
-    await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, refreshToken?.expiration);
+    await Utils.saveAuthDetails(database, entity.id, 'oauth', String(client), tokens, strategy.refreshToken?.expiration);
 
     return ctx.send({ message: 'Entity authenticated', entity, auth: tokens });
   }

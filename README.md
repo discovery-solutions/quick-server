@@ -91,6 +91,7 @@ auth:
         clientSecret: "google_oauth_client_secret"
         authUrl: "https://accounts.google.com/o/oauth2/auth"
         tokenUrl: "https://oauth2.googleapis.com/token"
+        userInfoUrl: "https://www.googleapis.com/oauth2/v2/userinfo"
         refreshToken:
           enabled: true
           expiration: "7d"
@@ -101,6 +102,23 @@ auth:
             email: "email"
             name: "name"
             picture: "avatar"
+      firebase:
+        clientId: "firebase_oauth_client_id"
+        clientSecret: "firebase_oauth_client_secret"
+        authUrl: "https://securetoken.googleapis.com/v1/token"
+        tokenUrl: "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken"
+        userInfoUrl: "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
+        refreshToken:
+          enabled: true
+          expiration: "7d"
+        entity:
+          name: "user"
+          identifier: "email"
+          mapper:
+            email: "email"
+            displayName: "name"
+            photoUrl: "avatar"
+
   permissions:
     default:
       get: false

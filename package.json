@@ -27,6 +27,7 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "dependencies": {
+    "@google-cloud/firestore": "^7.10.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.10.0",

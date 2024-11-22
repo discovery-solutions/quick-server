@@ -126,11 +126,13 @@ auth:
       insert: false
       update: false
       delete: false
+      search: true
     entities:
       user:
         "*": 
           get: true
           list: true
+          search: true
         user:
           insert: true
           update: true

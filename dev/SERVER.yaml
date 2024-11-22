@@ -33,6 +33,7 @@ auth:
     default:
       get: true
       list: true
+      search: true
       insert: false
       update: false
       delete: false
@@ -41,6 +42,7 @@ auth:
         "*":
           get: true
           list: true
+          search: true
           insert: true
           update: true
           delete: true

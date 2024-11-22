@@ -5,6 +5,7 @@ export interface EntityField {
     secure?: boolean;
 }
 export interface EntityPermission {
+    search: boolean;
     insert: boolean;
     update: boolean;
     delete: boolean;

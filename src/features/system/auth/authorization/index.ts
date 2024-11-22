@@ -4,7 +4,7 @@ import { Auth } from '..';
 
 const WHITELIST = ['system', 'auth'];
 const METHODS_TO_ACTIONS = {
-  get: ['get', 'list'],
+  get: ['get', 'list', 'search'],
   post: ['insert'],
   put: ['update'],
   patch: ['update'],

@@ -18,7 +18,7 @@ export class FileServer {
       const requestedFilePath = path.join(process.cwd(), config.path, file);
       
       if (!fs.existsSync(requestedFilePath))
-        return ctx.error(new Error('File not found'));
+        return ctx.status(404).error(new Error('File not found'));
 
       const extname = path.extname(requestedFilePath).toLowerCase();
       let contentType = 'application/octet-stream';

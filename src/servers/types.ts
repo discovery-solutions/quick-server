@@ -1,6 +1,7 @@
 import { IncomingHttpHeaders } from 'http';
 import { SocketServer } from './socket';
 import { HTTPServer } from './http';
+import { DatabaseInterface } from '../features/databases';
 
 export type Middleware = (ctx: Context) => any;
 
@@ -31,6 +32,7 @@ export interface Context {
   getBody: () => any;
   params?: RequestParams;
   session: Session;
+  database: DatabaseInterface;
   error: (err: Error) => any;
   send: (data: any) => any;
   status: (code: number) => any;

@@ -39,6 +39,7 @@ export class SocketServer {
         socket,
         message,
         session: {},
+        database: this.database,
         getParams: () => message.params,
         getBody: () => message.body,
         getHeaders: () => socket.headers,

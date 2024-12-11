@@ -104,6 +104,7 @@ export class HTTPServer {
       response: res,
       params: params,
       session: {},
+      database: this.database,
       getParams: () => params,
       getBody: () => req.body,
       getHeaders: () => req.headers,

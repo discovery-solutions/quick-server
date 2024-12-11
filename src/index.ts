@@ -8,6 +8,9 @@ import { Config } from './types';
 import { Auth } from './features/system/auth';
 import path from 'path';
 
+export { QuickServer, Database, EntityManager };
+export * from './types';
+
 const logger = new Logger();
 
 class QuickServer {
@@ -49,6 +52,3 @@ class QuickServer {
     return Server.get(name);
   }
 }
-
-export { QuickServer, Database, EntityManager };
-export * from './types';

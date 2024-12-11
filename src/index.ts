@@ -10,11 +10,7 @@ import path from 'path';
 
 const logger = new Logger();
 
-export * from './types';
-
-export { Database, EntityManager };
-
-export class QuickServer {
+class QuickServer {
   public config: Config;
   private middlewares: Middleware[] = [];
   static instance: QuickServer;
@@ -53,3 +49,6 @@ export class QuickServer {
     return Server.get(name);
   }
 }
+
+export { QuickServer, Database, EntityManager };
+export * from './types';

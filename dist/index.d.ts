@@ -2,9 +2,7 @@ import { Middleware } from './servers';
 import { EntityManager } from './features/entity';
 import { Database } from './features/databases';
 import { Config } from './types';
-export * from './types';
-export { Database, EntityManager };
-export declare class QuickServer {
+declare class QuickServer {
     config: Config;
     private middlewares;
     static instance: QuickServer;
@@ -13,3 +11,5 @@ export declare class QuickServer {
     start(): Promise<void>;
     get(name: string): import("./servers").ServerTypes;
 }
+export { QuickServer, Database, EntityManager };
+export * from './types';

@@ -1,4 +1,4 @@
-import { Middleware, Server } from './servers';
+import { HTTPServer, Middleware, Server, ServerTypes } from './servers';
 import { EntityManager } from './features/entity';
 import { Database } from './features/databases';
 import { loadYaml } from './utils/file';
@@ -35,6 +35,16 @@ class QuickServer {
     Auth.initialize(this.config.auth);
 
     QuickServer.instance = this;
+
+    ['get', 'post', 'put', 'delete', 'patch'].forEach((method) => {
+      (this as any)[method] = (...args: any[]) => {
+        Server.servers.forEach((server: ServerTypes) => {
+          if (server instanceof HTTPServer && typeof (server as any)[method] === 'function') {
+            (server as any)[method](...(args as [string, Middleware]));
+          }
+        });
+      };
+    });
   }
 
   use(middleware: Middleware) {
@@ -46,9 +56,5 @@ class QuickServer {
     EntityManager.initialize(this.config.entities);
     
     Server.start(this.middlewares);
-  }
-
-  get(name: string) {
-    return Server.get(name);
   }
 }

@@ -11,5 +11,4 @@ declare class QuickServer {
     constructor(filePath?: string);
     use(middleware: Middleware): void;
     start(): Promise<void>;
-    get(name: string): import("./servers").ServerTypes;
 }

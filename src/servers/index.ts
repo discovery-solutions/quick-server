@@ -17,19 +17,19 @@ export { SocketServer, HTTPServer, SocketContext, HTTPContext };
 
 export class Server {
   private static instance: Server | null = null;
-  private servers: Map<string, ServerTypes> = new Map();
+  static servers: Map<string, ServerTypes> = new Map();
 
   private constructor(servers: Config['servers']) {
     for (const server of servers) {
       switch (server.type) {
         case 'rest':
-          this.servers.set(server.name, new HTTPServer(server));
+          Server.servers.set(server.name, new HTTPServer(server));
           break;
         case 'socket':
-          this.servers.set(server.name, new SocketServer(server));
+          Server.servers.set(server.name, new SocketServer(server));
           break;
         case 'file':
-          this.servers.set(server.name, new FileServer(server) as HTTPServer);
+          Server.servers.set(server.name, new FileServer(server) as HTTPServer);
           break;
         default:
           break;
@@ -47,7 +47,7 @@ export class Server {
     if (!Server.instance)
       throw new Error(`Server ${name} not initialized. Call Server.initialize(servers) first.`);
 
-    return Server.instance.servers.get(name);
+    return Server.servers.get(name);
   }
 
   public static start(middlewares?: Middleware[]) {
@@ -55,7 +55,7 @@ export class Server {
       throw new Error('Server not initialized. Call Server.initialize(servers) first.');
 
     logger.log('Starting servers...');
-    Server.instance.servers.forEach((server: ServerTypes, key) => {
+    Server.servers.forEach((server: ServerTypes, key) => {
       server.use(Logger.middleware);
       server.use(Authentication.middleware);
       server.use(Authorization.middleware);

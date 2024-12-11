@@ -6,7 +6,7 @@ export * from './types';
 export { SocketServer, HTTPServer, SocketContext, HTTPContext };
 export declare class Server {
     private static instance;
-    private servers;
+    static servers: Map<string, ServerTypes>;
     private constructor();
     static initialize(servers: Config['servers']): void;
     static get(name: string): ServerTypes | undefined;

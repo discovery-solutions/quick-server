@@ -132,7 +132,9 @@ export class HTTPServer {
 
         const payload = parseResponse(this.config.format, data);
         logger.info(`Response for Incoming Request ${req.url}`, { payload });
-        return res.end(payload);
+        
+        if (!res.writableEnded)
+          return res.end(payload);
       },
       error: async (error) => {
         const { message, ...rest } = (error || {});

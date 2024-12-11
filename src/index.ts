@@ -12,6 +12,8 @@ const logger = new Logger();
 
 export * from './types';
 
+export { Database, EntityManager };
+
 export class QuickServer {
   public config: Config;
   private middlewares: Middleware[] = [];

@@ -1,5 +1,4 @@
 import { IncomingHttpHeaders } from 'http';
-import { ServerConfig } from '../types';
 import { SocketServer } from './socket';
 import { HTTPServer } from './http';
 

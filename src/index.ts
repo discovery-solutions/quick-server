@@ -24,6 +24,9 @@ class QuickServer {
     this.config = extract(loadYaml(filePath));
 
     Logger.setConfig(this.config.developer.logger);
+    
+    logger.log('Initializing Entities...');
+    EntityManager.initialize(this.config.entities);
 
     logger.log('Initializing DBs');
     Database.initialize(this.config.databases);
@@ -52,9 +55,6 @@ class QuickServer {
   }
 
   async start() {
-    logger.log('Initializing Entities...');
-    EntityManager.initialize(this.config.entities);
-    
     Server.start(this.middlewares);
   }
 }

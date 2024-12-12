@@ -35,6 +35,9 @@ export class EntityManager {
   }
 
   public static list() {
+    if (!EntityManager.instance)
+      throw new Error(`EntityManager not initialized. Call EntityManager.initialize(entities) first.`);
+
     return EntityManager.instance.entities.keys();
   }
 }

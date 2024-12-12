@@ -1,4 +1,3 @@
-import { EntityManager } from '../../../entity';
 import { Context, Server } from '../../../../servers';
 import { Auth } from '..';
 
@@ -16,11 +15,12 @@ export class Authorization {
     const { url, method: methodUpperCase, session, server: serverName } = ctx.getInfo();
     const server = Server.get(serverName);
     const method = methodUpperCase.toLowerCase();
-    const entities = EntityManager.list();
-
+    
     if (server.config.type === 'file' && !server.config.secure) return;
 
-    const isWhitelisted = WHITELIST.some((path) => url.includes(path));
+    // const isWhitelisted = [...WHITELIST, ...Auth.getWhitelist()].some((path) => url.includes(path));
+    const whitelistRegex = WHITELIST.map(path => new RegExp(`^${path.replace('*', '.*')}$`));
+    const isWhitelisted = [...whitelistRegex, ...Auth.getWhitelist().map(path => new RegExp(`^${path.replace('*', '.*')}$`))].some((regex) => regex.test(url));
     if (isWhitelisted) return;
 
     const defaultPermissions = Auth.getPermission('default');

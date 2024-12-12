@@ -7,4 +7,5 @@ export declare class Auth {
     static getStrategies(): import("../../../types").AuthStrategies;
     static getStrategy<K extends keyof AuthConfig['strategies']>(key: K, client?: string): AuthConfig['strategies'][K] | OAuthStrategy;
     static getPermission(key: string): any;
+    static getWhitelist(): string[];
 }

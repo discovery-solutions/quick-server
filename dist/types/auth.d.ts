@@ -42,6 +42,7 @@ export interface AuthStrategies {
 export interface AuthConfigParams {
     strategies: AuthStrategies;
     permissions: {
+        whitelist: string[];
         default: EntityPermission;
         entities: {
             [entity: string]: {

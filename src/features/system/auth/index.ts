@@ -44,4 +44,10 @@ export class Auth {
     return permissions?.default;
   }
 
+  public static getWhitelist() {
+    if (!Auth.instance)
+      throw new Error(`AuthConfig not initialized. Call Auth.initialize(entities) first.`);
+
+    return Auth.instance.config.permissions.whitelist;
+  }
 }

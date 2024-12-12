@@ -45,6 +45,7 @@ export interface AuthStrategies {
 export interface AuthConfigParams {
   strategies: AuthStrategies;
   permissions: {
+    whitelist: string[];
     default: EntityPermission;
     entities: {
       [entity: string]: {
@@ -63,6 +64,7 @@ export class AuthConfig implements AuthConfigParams {
 
     this.permissions = {
       entities: parameters.permissions?.entities || {},
+      whitelist: parameters.permissions?.whitelist || [],
       default: {
         get: true,
         list: true,

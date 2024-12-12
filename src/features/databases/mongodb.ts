@@ -12,6 +12,10 @@ export class MongoDB implements DatabaseInterface {
     this.logger = new Logger('MongoDB', logs);
     this.db = client.db(dbName);
     this.logger.log(`Connected to MongoDB database: "${dbName}"`);
+
+    for (const entityName of EntityManager.list())
+      if (!this.db.listCollections({ name: entityName }).hasNext())
+        this.db.createCollection(entityName);
   }
 
   private parse(query: Record<string, any> = {}) {

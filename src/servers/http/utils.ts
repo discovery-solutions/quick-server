@@ -94,7 +94,7 @@ export function findRoute(pathname: string, method: string, routes: any): RouteH
       }
     }
 
-    if (isMatch || routeParts[routeParts.length - 1] === '*') {
+    if ((isMatch || routeParts[routeParts.length - 1] === '*') && routes[raw][method]) {
       routes[raw][method].params = params;
       return routes[raw][method];
     }

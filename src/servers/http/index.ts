@@ -131,7 +131,7 @@ export class HTTPServer {
         if (!res.statusCode) res.statusCode = 200;
 
         const payload = parseResponse(this.config.format, data);
-        logger.info(`Response for Incoming Request ${req.url}`, { payload });
+        logger.info(`Response for Incoming Request ${req.method.toUpperCase()} ${req.url}`, { payload });
         
         if (!res.writableEnded)
           return res.end(payload);

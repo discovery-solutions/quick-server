@@ -18,8 +18,14 @@ export class Authorization {
     
     if (server.config.type === 'file' && !server.config.secure) return;
 
-    const whitelistRegex = WHITELIST.map(path => new RegExp(`^${path.replace('*', '.*')}$`));
-    const isWhitelisted = [...whitelistRegex, ...Auth.getWhitelist().map(path => new RegExp(`^${path.replace('*', '.*')}$`))].some((regex) => regex.test(url));
+    const whitelist = [...WHITELIST, ...Auth.getWhitelist()];
+    const isWhitelisted = whitelist.some((path) => {
+      if (!path.includes("*")) return path === url;
+      
+      const regex = new RegExp(`^${path.replace(/\*/g, ".*")}$`);
+      return regex.test(url);
+    });
+    
     if (isWhitelisted) return;
 
     const defaultPermissions = Auth.getPermission('default');

@@ -226,8 +226,11 @@ export class HTTPServer {
   start() {
     const server = createServer(async (req, res) => {
       for (const key in NativeMiddlewares)
-        await NativeMiddlewares[key](req, res);
+        if (!res.writableEnded)
+          await NativeMiddlewares[key](req, res);
       
+      if (res.writableEnded) return;
+
       return this.handleRequest(req as any, res);
     });
 

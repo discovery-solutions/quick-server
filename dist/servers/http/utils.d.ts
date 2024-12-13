@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { RouteHandler } from './types';
 declare function jsonParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>): Promise<unknown>;
 declare function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promise<any>): Promise<unknown>;
-declare function corsMiddleware(request: IncomingMessage, response: ServerResponse): Promise<void>;
+declare function corsMiddleware(request: IncomingMessage, response: ServerResponse): Promise<ServerResponse<IncomingMessage>>;
 export declare const NativeMiddlewares: {
     jsonParser: typeof jsonParser;
     formParser: typeof formParser;

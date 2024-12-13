@@ -54,19 +54,14 @@ function formParser(request: IncomingMessage, _: ServerResponse, __: () => Promi
 }
 
 async function corsMiddleware(request: IncomingMessage, response: ServerResponse) {
-  const allowedOrigins = ['*'];
-  const origin = request.headers.origin;
-
-  if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-    response.setHeader('Access-Control-Allow-Origin', origin || '*');
-    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  }
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (request.method !== 'OPTIONS') return;
     
   response.statusCode = 204;
-  response.end();
+  return response.end();
 }
 
 export const NativeMiddlewares = { jsonParser, formParser, corsMiddleware };
